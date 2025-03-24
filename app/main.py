@@ -41,7 +41,7 @@ def post_sentiment(request: BiasRequest) -> dict[str, BiasResponse]:
         logger.info(f"Final sentiment agreed on {sentiment_values[0]}")
         sentiments["final"] = {"bias": sentiment_values[0]}
     else:
-        logger.info(f"Final sentiment is NEUTRAL")
+        logger.warn(f"Final sentiment is NEUTRAL")
         sentiments["final"] = {"bias": BiasType.NEUTRAL, "error": "Sentiments do not agree"}
     return sentiments
 
