@@ -48,7 +48,7 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v4
       with:
-        context: appk
+        context: app
         push: true
         tags: ghcr.io/${{ env.REPO_NAME }}/bias:v_${{ github.run_id }}_${{ env.SHORT_SHA }}
 
