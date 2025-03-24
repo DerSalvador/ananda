@@ -42,16 +42,19 @@ jobs:
       id: timestamp
       run: echo "ts=$(date +%s)" >> "$GITHUB_ENV"
 
+    - name: Set Repository Name to Lowercase
+      run: echo "REPO_NAME=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
     - name: Build and push
       uses: docker/build-push-action@v4
       with:
         context: appk
         push: true
-        tags: ghcr.io/${{ github.repository_owner }}/bias:v_${{ github.run_id }}_${{ env.SHORT_SHA }}
+        tags: ghcr.io/${{ env.REPO_NAME }}/bias:v_${{ github.run_id }}_${{ env.SHORT_SHA }}
 
     - name: Build and push
       uses: docker/build-push-action@v4
       with:
         context: app
         push: true
-        tags: ghcr.io/${{ github.repository_owner }}/bias:latest
+        tags: ghcr.io/${{ env.REPO_NAME }}/bias:latest
