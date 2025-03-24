@@ -61,15 +61,34 @@ class AnandaStrategy(IStrategy):
         if market_bias == "long":       
             logging.info(f"Market bias is {market_bias} for {symbol}, skipping order.")
             dataframe.loc[:, ['enter_long', 'enter_tag']] = (1, 'entry_reason')
+        else:
+            dataframe.loc[:, ['enter_long', 'enter_tag']] = (0, 'entry_reason')
+            
         if market_bias == "short":             
             logging.info(f"Market bias is {market_bias} for {symbol}, skipping order.")
             dataframe.loc[:, ['enter_short', 'enter_tag']] = (1, 'entry_reason')
+        else:
+            dataframe.loc[:, ['enter_short', 'enter_tag']] = (0, 'entry_reason')
+            
 
         return dataframe
 
     def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         return dataframe
-    
+
+    def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float,
+                    current_profit: float, **kwargs):
+        is_short = trade.is_short
+        market_bias = coinGeckoAPI.get_file_sentiment(symbol, coinGeckoAPI.apikey, coinGeckoAPI.apisecret)
+        logging.info(f"Market bias for {symbol} is {market_bias}")
+        if market_bias == "long" and is_short:       
+            logging.info(f"Trade is short but bias is long, selling short")
+            return true
+            
+        if market_bias == "short" and not is_short:             
+            logging.info(f"Trade is long but bias is short, selling long")
+            return true
+                
     def leverage(self, pair: str, current_time: datetime, current_rate: float,
                  proposed_leverage: float, max_leverage: float, entry_tag: str | None, side: str,
                  **kwargs) -> float:
