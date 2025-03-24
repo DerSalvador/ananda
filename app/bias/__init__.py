@@ -22,10 +22,12 @@ for filename in os.listdir(current_dir):
             for name, obj in inspect.getmembers(module, inspect.isclass):
                 if issubclass(obj, BiasInterface) and obj is not BiasInterface:
                     if not obj.ignore:
-                        inteface_name = filename[:-3]
-                        INTERFACES[inteface_name] = obj()
+                        # interface_name = filename[:-3]
+                        # interface_name = obj.__name__
+                        interface_name = name
+                        INTERFACES[interface_name] = obj()
                     else:
-                        logger.info(f"Ignoring {filename[:-3]}")
+                        logger.info(f"Ignoring {name}")
         except Exception as e:
             logger.error(f"Error loading {filename}: {e}")
 
