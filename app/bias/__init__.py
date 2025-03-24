@@ -1,14 +1,32 @@
-from bias.greed_and_fear import GreedAndFear
-from bias.binance_trend import BinanceTrend
-from bias.coin_gecko_btc import CoinGeckoBTC
-from bias.coin_gecko_global import CoinGeckoGlobal
-from bias.coin_gecko_market import CoinGeckoMarket
+import os
+import importlib
+import inspect
+from bias.interface import BiasInterface
+from utils import get_logger
 
+INTERFACES = {}
 
-INTERFACES = {
-    "coin_gecko_market": CoinGeckoMarket(),
-    "coin_gecko_global": CoinGeckoGlobal(),
-    "coin_gecko_BTC": CoinGeckoBTC(),
-    "binance_trend": BinanceTrend(),
-    "greed_and_fear": GreedAndFear()
-}
+logger = get_logger()
+
+# Get the directory of the current file
+current_dir = os.path.dirname(__file__)
+
+# List all Python files in the directory
+for filename in os.listdir(current_dir):
+    if filename.endswith(".py") and filename not in ["__init__.py", "interface.py"]:
+        try:
+            module_name = f"bias.{filename[:-3]}"
+            module = importlib.import_module(module_name)
+
+            # Inspect the module for classes implementing BiasInterface
+            for name, obj in inspect.getmembers(module, inspect.isclass):
+                if issubclass(obj, BiasInterface) and obj is not BiasInterface:
+                    if not obj.ignore:
+                        inteface_name = filename[:-3]
+                        INTERFACES[inteface_name] = obj()
+                    else:
+                        logger.info(f"Ignoring {filename[:-3]}")
+        except Exception as e:
+            logger.error(f"Error loading {filename}: {e}")
+
+logger.info(f"Loaded interfaces: {list(INTERFACES.keys())}")
