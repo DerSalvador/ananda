@@ -21,13 +21,13 @@ for filename in os.listdir(current_dir):
             # Inspect the module for classes implementing BiasInterface
             for name, obj in inspect.getmembers(module, inspect.isclass):
                 if issubclass(obj, BiasInterface) and obj is not BiasInterface:
+                    # interface_name = filename[:-3]
+                    # interface_name = obj.__name__
+                    interface_name = name
                     if not obj.ignore:
-                        # interface_name = filename[:-3]
-                        # interface_name = obj.__name__
-                        interface_name = name
                         INTERFACES[interface_name] = obj()
                     else:
-                        logger.info(f"Ignoring {name}")
+                        logger.info(f"Ignoring {interface_name}")
         except Exception as e:
             logger.error(f"Error loading {filename}: {e}")
 
