@@ -9,6 +9,87 @@ from tabulate import tabulate
 from binance.client import Client
 from binance.exceptions import BinanceAPIException
 import requests, decimal
+import time
+from freqtrade.strategy import IStrategy
+from freqtrade.strategy import CategoricalParameter, IntParameter
+from functools import reduce
+from pandas import DataFrame
+from datetime import datetime
+from dateutil import parser
+import os 
+import sys
+# import timeit
+from freqtrade.persistence import Trade
+import numpy as np
+# Get rid of pandas warnings during backtesting
+import pandas as pd
+from attrs import exceptions
+pd.options.display.float_format = '{:f}'.format
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', 200)
+from sqlalchemy import create_engine
+
+import sqlite3
+import urllib3
+
+from pandas import DataFrame, Series
+# --------------------------------
+import talib.abstract as ta
+import ta as taa
+import freqtrade.vendor.qtpylib.indicators as qtpylib
+import numpy  # noqa
+
+import requests
+import json
+import pywt
+import talib.abstract as ta
+from utils.DataframeUtils import DataframeUtils, ScalerType
+
+from sklearn.preprocessing import RobustScaler
+from xgboost import XGBRegressor
+from lightgbm import LGBMRegressor
+from utils.FuturesPositionsFetcher import FuturesPositionsFetcher
+# from utils.coinGeckoAPI import CoinGeckoAPI
+from typing import Dict, List, Optional, Tuple, Union
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+import threading
+
+import logging
+import warnings
+from scipy.stats import linregress
+
+import threading
+from contextvars import ContextVar
+from typing import Any, Dict, Final, Optional
+
+from sqlalchemy import create_engine, inspect
+from sqlalchemy.exc import NoSuchModuleError
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.pool import StaticPool
+# from binance.client import Client
+from freqtrade.exceptions import OperationalException
+from freqtrade.persistence.base import ModelBase
+from freqtrade.persistence.custom_data import _CustomData
+from freqtrade.persistence.key_value_store import _KeyValueStoreModel
+from freqtrade.persistence.migrations import check_migrate
+from freqtrade.persistence.pairlock import PairLock
+from freqtrade.persistence.trade_model import Order, Trade 
+import traceback
+from utils.DataframeUtils import DataframeUtils, ScalerType
+import pywt
+import talib.abstract as ta
+
+from freqtrade.rpc import RPCManager
+from freqtrade.rpc.external_message_consumer import ExternalMessageConsumer
+from freqtrade.rpc.rpc_types import (ProfitLossStr, RPCCancelMsg, RPCEntryMsg, RPCExitCancelMsg,
+                                     RPCExitMsg, RPCProtectionMsg, RPCMessageType)
+
+from utils.dsHedging import dsHedging
+import numpy as np
+from enum import Enum
 
 
 ATR_PERIOD = 14  # Number of periods for ATR calculation
