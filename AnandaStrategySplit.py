@@ -218,4 +218,3 @@ class AnandaStrategySplit(IStrategy):
         if market_bias == "short" and not is_short:
             logging.info(f"Trade is long but bias is short, selling long")
             return True
-                
