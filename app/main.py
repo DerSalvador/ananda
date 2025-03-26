@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from db import get_leverage, update_leverage
-from bias import INTERFACES, get_biases, update_bias
+from bias import get_biases, getInterfaces, update_bias
 from pydantic import BaseModel
 from bias.interface import BiasRequest, BiasResponse, BiasType
 from fastapi.templating import Jinja2Templates
@@ -30,8 +30,9 @@ async def get_sentiment(symbol: str) -> dict[str, BiasResponse]:
 
 def post_sentiment(request: BiasRequest) -> dict[str, BiasResponse]:
     sentiments = {}
-    executor = ThreadPoolExecutor(max_workers=len(INTERFACES))
-    futures = {executor.submit(interface.bias, request): name for name, interface in INTERFACES.items()}
+    interfaces = getInterfaces()
+    executor = ThreadPoolExecutor(max_workers=len(interfaces))
+    futures = {executor.submit(interface.bias, request): name for name, interface in interfaces.items()}
 
     for future in futures:
         interface_name = futures[future]
