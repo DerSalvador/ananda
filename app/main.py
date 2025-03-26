@@ -1,15 +1,21 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from bias import INTERFACES
+from bias import INTERFACES, get_biases, update_bias
+from pydantic import BaseModel
 from bias.interface import BiasRequest, BiasResponse, BiasType
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from utils import get_logger
 from concurrent.futures import ThreadPoolExecutor
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse
 import uvicorn
 from datetime import datetime
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
+# app.mount("/static", StaticFiles(directory="static"), name="static")
 logger = get_logger()
 
 @app.get("/status")
@@ -44,6 +50,21 @@ def post_sentiment(request: BiasRequest) -> dict[str, BiasResponse]:
         logger.warn(f"Final sentiment is NEUTRAL")
         sentiments["final"] = {"bias": BiasType.NEUTRAL, "error": "Sentiments do not agree"}
     return sentiments
+
+class UpdateBiasRequest(BaseModel):
+    name: str
+    active: bool
+
+@app.get("/", response_class=HTMLResponse)
+async def get_config_page(request: Request):
+    return templates.TemplateResponse("config.html", {"request": request, "biases": get_biases()})
+
+@app.post("/update-bias")
+async def _update_bias(data: UpdateBiasRequest):
+    update_bias(data.name, data.active)
+    return {"status": "success", "message": "Bias updated"}
+
+
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=9000, reload=True)

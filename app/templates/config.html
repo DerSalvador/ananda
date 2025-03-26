@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script>
+        async function toggleBias(biasName, checkbox) {
+            const active = checkbox.checked;
+            const response = await fetch('/update-bias', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: biasName, active })
+            });
+            const result = await response.json();
+            if (result.status !== 'success') {
+                alert('Error updating bias: ' + result.message);
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-4">Bias Configuration</h1>
+        <ul class="space-y-2">
+            {% for bias in biases %}
+            <li class="flex items-center">
+                <input type="checkbox" onchange="toggleBias('{{ bias.name }}', this)" class="mr-2" {% if bias.active %}checked{% endif %}>
+                <label class="text-lg">{{ bias.name }}</label>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

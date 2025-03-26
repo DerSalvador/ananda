@@ -3,10 +3,29 @@ import importlib
 import inspect
 from bias.interface import BiasInterface
 from utils import get_logger
+from tinydb import TinyDB, Query
 
-INTERFACES = {}
 
 logger = get_logger()
+INTERFACES = {}
+CONFIG_PATH = os.getenv("CONFIG_PATH", "/tmp")
+
+biasdb = TinyDB(f"{CONFIG_PATH}/biasdb.json")
+# Entries of type {'name': 'CoinGeckoBTC', 'active': True} def init():
+
+def get_biases():
+    biases = biasdb.all()
+    return biases
+
+def get_bias(bias):
+    return biasdb.search(Query().name == bias)
+
+def update_bias(bias, active=True):
+    # if doesn't exist, create
+    if not biasdb.search(Query().name == bias):
+        biasdb.insert({"name": bias, "active": active})
+    else:
+        biasdb.update({"active": active}, Query().name == bias)
 
 # Get the directory of the current file
 current_dir = os.path.dirname(__file__)
@@ -24,6 +43,10 @@ for filename in os.listdir(current_dir):
                     # interface_name = filename[:-3]
                     # interface_name = obj.__name__
                     interface_name = name
+                    exising_bias = get_bias(interface_name)
+                    if exising_bias:
+                        if not exising_bias[0]["active"]:
+                            obj.ignore = True
                     if not obj.ignore:
                         INTERFACES[interface_name] = obj()
                     else:
@@ -32,3 +55,9 @@ for filename in os.listdir(current_dir):
             logger.error(f"Error loading {filename}: {e}")
 
 logger.info(f"Loaded interfaces: {list(INTERFACES.keys())}")
+
+def init():
+    for bias in INTERFACES.keys():
+        if not biasdb.search(Query().name == bias):
+            biasdb.insert({"name": bias, "active": True})
+init()
