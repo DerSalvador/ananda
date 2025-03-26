@@ -160,7 +160,7 @@ class AnandaStrategySplit(IStrategy):
         :return: DataFrame with entry columns populated
         """
         logging.warn("Populate entry with new api")
-        symbol = metadata['pair'].replace("/USDT:USDT", "")
+        symbol = metadata['pair'].split("/")[0]
         market_bias = self.get_bias(symbol)
 
         if market_bias == "neutral":
@@ -207,7 +207,8 @@ class AnandaStrategySplit(IStrategy):
     def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float,
                     current_profit: float, **kwargs):
         is_short = trade.is_short
-        symbol = pair.replace("/USDT:USDT", "")
+        is_long = trade.is_long
+        symbol = pair.split("/")[0]
         market_bias = self.get_bias(symbol)
         logging.info(f"Market bias for {symbol} is {market_bias}")
 
@@ -215,6 +216,6 @@ class AnandaStrategySplit(IStrategy):
             logging.info(f"Trade is short but bias is long, selling short")
             return True
             
-        if market_bias == "short" and not is_short:
+        if market_bias == "short" and is_long:
             logging.info(f"Trade is long but bias is short, selling long")
             return True
