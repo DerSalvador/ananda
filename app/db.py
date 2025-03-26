@@ -25,6 +25,6 @@ def update_leverage(pair: str = "default", leverage: float = 5.0):
 def get_leverage(pair: str = "default"):
     config = get_futures_config()
     logger.info(f"Config: {config}")
-    fallback_leverage = config.get(pair, 5.0)
+    fallback_leverage = config.get(pair, config.get("default", 5.0))
     return fallback_leverage
 

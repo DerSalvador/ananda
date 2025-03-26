@@ -41,6 +41,7 @@ import requests
 from technical import qtpylib
 
 
+bias_endpoint = os.getenv("BIAS_ENDPOINT", "")
 class AnandaStrategySplit(IStrategy):
     """
     This is a strategy template to get you started.
@@ -101,6 +102,29 @@ class AnandaStrategySplit(IStrategy):
     buy_rsi = IntParameter(10, 40, default=30, space="buy")
     sell_rsi = IntParameter(60, 90, default=70, space="sell")
 
+    def get_bias(self, pair):
+        market_bias = {}
+        try:
+            response = requests.get(f"{bias_endpoint}/sentiment/{pair}")
+            response.raise_for_status()
+            market_bias = response.json()
+        except Exception as e:
+            logging.error(f"Error getting market bias: {e}")
+
+        market_bias = market_bias.get("final", {}).get("bias", "neutral")
+        return market_bias
+
+    def get_leverage(self, pair, proposed_leverage):
+        leverage = proposed_leverage
+        try:
+            response = requests.get(f"{bias_endpoint}/leverage?pair={pair}")
+            response.raise_for_status()
+            leverage = response.json().get("leverage", proposed_leverage)
+        except Exception as e:
+            logging.error(f"Error getting leverage: {e}")
+
+        return leverage
+
     def informative_pairs(self):
         """
         Define additional, informative pair/interval combinations to be cached from the exchange.
@@ -137,16 +161,7 @@ class AnandaStrategySplit(IStrategy):
         """
         logging.warn("Populate entry with new api")
         symbol = metadata['pair'].replace("/USDT:USDT", "")
-        bias_endpoint = os.getenv("BIAS_ENDPOINT", "")
-        market_bias = {}
-        try:
-            response = requests.get(f"{bias_endpoint}/sentiment/BTC")
-            response.raise_for_status()
-            market_bias = response.json()
-        except Exception as e:
-            logging.error(f"Error getting market bias: {e}")
-
-        market_bias = market_bias.get("final", {}).get("bias", "neutral")
+        market_bias = self.get_bias(symbol)
 
         if market_bias == "neutral":
             logging.info(f"Market bias is {market_bias} for {symbol}, skipping order.")
@@ -159,6 +174,26 @@ class AnandaStrategySplit(IStrategy):
 
         return dataframe
 
+    def leverage(self, pair: str, current_time: datetime, current_rate: float,
+                 proposed_leverage: float, max_leverage: float, entry_tag: str | None, side: str,
+                 **kwargs) -> float:
+        """
+        Customize leverage for each new trade. This method is only called in futures mode.
+
+        :param pair: Pair that's currently analyzed
+        :param current_time: Current time
+        :param current_rate: Current rate
+        :param proposed_leverage: Proposed leverage
+        :param max_leverage: Max leverage
+        :param entry_tag: Entry tag
+        :param side: Side
+        :return: Leverage
+        """
+        proposed_leverage = self.get_leverage(pair, proposed_leverage)
+
+        logging.info(f"Using leverage {proposed_leverage} for {pair}")
+        return proposed_leverage
+
     def populate_exit_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """
         Based on TA indicators, populates the exit signal for the given dataframe
@@ -168,3 +203,19 @@ class AnandaStrategySplit(IStrategy):
         """
         logging.warn("Ignore exit, using roi and stoploss")
         return dataframe
+
+    def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float,
+                    current_profit: float, **kwargs):
+        is_short = trade.is_short
+        symbol = pair.replace("/USDT:USDT", "")
+        market_bias = self.get_bias(symbol)
+        logging.info(f"Market bias for {symbol} is {market_bias}")
+
+        if market_bias == "long" and is_short:
+            logging.info(f"Trade is short but bias is long, selling short")
+            return True
+            
+        if market_bias == "short" and not is_short:
+            logging.info(f"Trade is long but bias is short, selling long")
+            return True
+                
