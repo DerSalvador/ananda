@@ -1,4 +1,6 @@
 import requests
+import os
+from bias import get_config
 from utils import get_logger
 from bias.interface import BiasInterface, BiasRequest, BiasResponse, BiasType
 
@@ -6,7 +8,9 @@ logger = get_logger()
 
 class GreedAndFear(BiasInterface):
     def bias(self, biasRequest: BiasRequest) -> BiasResponse:
-        url = "https://api.alternative.me/fng/?limit=100"
+        limit = int(get_config("GreedAndFearLimit", 10))
+        url = f"https://api.alternative.me/fng/?limit={limit}"
+        logger.info(f"Requesting {url}")
 
         response = requests.get(url)
         data = response.json()

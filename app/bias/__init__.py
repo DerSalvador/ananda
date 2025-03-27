@@ -28,6 +28,21 @@ def update_bias(bias, active=True):
         biasdb.update({"active": active}, Query().name == bias)
     getInterfaces.cache_clear()
 
+def update_config(configname, configvalue):
+    table = biasdb.table("configs")
+    table.upsert({"name": configname, "value": configvalue}, Query().name == configname)
+
+def get_config(configname, default=None):
+    table = biasdb.table("configs")
+    config = table.get(Query().name == configname)
+    if config:
+        return config["value"]
+    return default
+
+def get_all_configs():
+    table = biasdb.table("configs")
+    return table.all()
+
 # Get the directory of the current file
 current_dir = os.path.dirname(__file__)
 
@@ -64,4 +79,11 @@ def init():
     for bias in getInterfaces().keys():
         if not biasdb.search(Query().name == bias):
             biasdb.insert({"name": bias, "active": True})
+    configs = {
+        "GreedAndFearLimit": 10,
+    }
+    for name, value in configs.items():
+        table = biasdb.table("configs")
+        if not table.get(Query().name == name):
+            table.insert({"name": name, "value": value})
 init()

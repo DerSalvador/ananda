@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from db import get_leverage, update_leverage
-from bias import get_biases, getInterfaces, update_bias
+from bias import get_all_configs, get_biases, getInterfaces, update_bias, update_config
 from pydantic import BaseModel
 from bias.interface import BiasRequest, BiasResponse, BiasType
 from fastapi.templating import Jinja2Templates
@@ -59,7 +59,7 @@ class UpdateBiasRequest(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def get_config_page(request: Request):
-    return templates.TemplateResponse("config.html", {"request": request, "biases": get_biases(), "leverage": get_leverage()})
+    return templates.TemplateResponse("config.html", {"request": request, "biases": get_biases(), "leverage": get_leverage(), "configs": get_all_configs()})
 
 class UpdateLeverageRequest(BaseModel):
     pair: str = "default"
@@ -79,7 +79,17 @@ async def _update_bias(data: UpdateBiasRequest):
     update_bias(data.name, data.active)
     return {"status": "success", "message": "Bias updated"}
 
+@app.get("/configs")
+async def _get_configs():
+    return get_all_configs()
 
+class UpdateConfigRequest(BaseModel):
+    name: str
+    value: str
+@app.post("/config")
+async def _update_config(data: UpdateConfigRequest):
+    update_config(data.name, data.value)
+    return {"status": "success", "message": "Config updated"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=9000, reload=True)

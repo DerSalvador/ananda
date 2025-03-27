@@ -30,6 +30,21 @@
                 alert('Leverage updated successfully!');
             }
         }
+
+        async function updateConfig(configname) {
+          const configValue = document.getElementById('config-input-' + configname).value;
+          const response = await fetch('/config', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: configname, value: configValue })
+          });
+          const result = await response.json();
+          if (result.status !== 'success') {
+              alert('Error updating config: ' + result.message);
+          } else {
+              alert('Config updated successfully!');
+          }
+        }
     </script>
 </head>
 <body class="bg-gray-100 flex flex-col items-center justify-center">
@@ -46,10 +61,25 @@
     </div>
     <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mt-6">
         <h1 class="text-2xl font-bold mb-4">Futures</h1>
-        <div class="flex items-center">
-          <input type="number" id="leverage-input" class="border p-2 mr-2 w-full" placeholder="Enter leverage" value="{{ leverage }}">
+        <div class="flex flex-col">
+          <label for="leverage-input" class="text-lg mb-2">Leverage</label>
+          <div class="flex items-center">
+            <input type="number" id="leverage-input" class="border p-2 mr-2 w-full" placeholder="Enter leverage" value="{{ leverage }}">
             <button onclick="updateLeverage()" class="bg-blue-500 text-white p-2 rounded">Submit</button>
-        </div>
+          </div>
+      </div>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mt-6">
+        <h1 class="text-2xl font-bold mb-4">Misc</h1>
+        {% for config in configs %}
+        <div class="flex flex-col">
+          <label for="config-input-{{config.name}}" class="text-lg mb-2">{{ config.name }}</label>
+          <div class="flex items-center">
+            <input type="number" id="config-input-{{config.name}}" class="border p-2 mr-2 w-full" placeholder="Enter leverage" value="{{ config.value }}">
+            <button onclick="updateConfig('{{config.name}}')" class="bg-blue-500 text-white p-2 rounded">Submit</button>
+          </div>
+        {% endfor %}
+      </div>
     </div>
 </body>
 </html>
