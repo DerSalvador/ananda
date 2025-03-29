@@ -67,7 +67,7 @@ class AnandaStrategySplit(IStrategy):
     timeframe = "5m"
 
     # Can this strategy go short?
-    can_short: bool = False
+    can_short: bool = True
 
     # Minimal ROI designed for the strategy.
     # This attribute will be overridden if the config file contains "minimal_roi".
@@ -108,35 +108,39 @@ class AnandaStrategySplit(IStrategy):
             response = requests.get(f"{bias_endpoint}/sentiment/{pair}")
             response.raise_for_status()
             market_bias = response.json()
+            market_bias = market_bias.get("final", {}).get("bias", "neutral")
         except Exception as e:
-            logging.error(f"Error getting market bias: {e}")
-
-        market_bias = market_bias.get("final", {}).get("bias", "neutral")
-        return market_bias
+            s = f"Error getting market bias: {e}"
+            logging.error(s)
+            market_bias = s
+            raise e
+        finally:
+            return market_bias
 
     def get_leverage(self, pair, proposed_leverage):
-        leverage = proposed_leverage
+        leverage = 5 # proposed_leverage
         try:
             response = requests.get(f"{bias_endpoint}/leverage?pair={pair}")
             response.raise_for_status()
             leverage = response.json().get("leverage", proposed_leverage)
         except Exception as e:
             logging.error(f"Error getting leverage: {e}")
+            raise e
+        finally:
+            return leverage
 
-        return leverage
-
-    # def informative_pairs(self):
-    #     """
-    #     Define additional, informative pair/interval combinations to be cached from the exchange.
-    #     These pair/interval combinations are non-tradeable, unless they are part
-    #     of the whitelist as well.
-    #     For more information, please consult the documentation
-    #     :return: List of tuples in the format (pair, interval)
-    #         Sample: return [("ETH/USDT", "5m"),
-    #                         ("BTC/USDT", "15m"),
-    #                         ]
-    #     """
-    #     return []
+    def informative_pairs(self):
+        """
+        Define additional, informative pair/interval combinations to be cached from the exchange.
+        These pair/interval combinations are non-tradeable, unless they are part
+        of the whitelist as well.
+        For more information, please consult the documentation
+        :return: List of tuples in the format (pair, interval)
+            Sample: return [("ETH/USDT", "5m"),
+                            ("BTC/USDT", "15m"),
+                            ]
+        """
+        return []
 
     def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """
@@ -159,6 +163,7 @@ class AnandaStrategySplit(IStrategy):
         :param metadata: Additional information, like the currently traded pair
         :return: DataFrame with entry columns populated
         """
+        # dataframe.drop(dataframe.index, inplace=True)
         logging.warn("Populate entry with new api")
         symbol = metadata['pair'].split("/")[0]
         market_bias = self.get_bias(symbol)
@@ -167,21 +172,18 @@ class AnandaStrategySplit(IStrategy):
             logging.info(f"Market bias is {market_bias} for {symbol}, skipping order.")
             dataframe.loc[:, ['enter_long', 'enter_tag']] = (0, 'entry_reason')
             dataframe.loc[:, ['enter_short', 'enter_tag']] = (0, 'entry_reason')
-        if market_bias == "long":       
-            dataframe.loc[:, ['enter_long', 'enter_tag']] = (1, f"entered by market bias {market_bias}, not overruled")
+        elif market_bias == "long":       
+            dataframe.loc[:, ['enter_long', 'enter_tag']] = (1, f"entered by market bias {market_bias}, not overruled by custom_exit")
             s = f"Market bias is {market_bias} for {symbol}, going long."
             logging.info(s)
             self.dp.send_msg(s)
-        else:
-            dataframe.loc[:, ['enter_long', 'enter_tag']] = (0, 'entry_reason')
-            
-        if market_bias == "short":             
-            dataframe.loc[:, ['enter_short', 'enter_tag']] = (1, f"entered by market bias {market_bias}, not overruled")
+        elif market_bias == "short":
+            dataframe.loc[:, ['enter_short', 'enter_tag']] = (1, f"entered by market bias {market_bias}, not overruled by custom_exit")
             s = f"Market bias is {market_bias} for {symbol}, going short."
             logging.info(s)
             self.dp.send_msg(s)
         else:
-            dataframe.loc[:, ['enter_short', 'enter_tag']] = (0, 'entry_reason')
+            raise Exception(f"Market Bias unknown {market_bias}")
 
         return dataframe
 
@@ -218,7 +220,7 @@ class AnandaStrategySplit(IStrategy):
     def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float,
                     current_profit: float, **kwargs):
         is_short = trade.is_short
-        is_long = trade.is_long
+        is_long = not trade.is_short
         symbol = pair.split("/")[0]
         market_bias = self.get_bias(symbol)
         logging.info(f"Market bias for {symbol} is {market_bias}")
