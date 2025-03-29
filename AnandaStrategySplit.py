@@ -166,11 +166,16 @@ class AnandaStrategySplit(IStrategy):
         if market_bias == "neutral":
             logging.info(f"Market bias is {market_bias} for {symbol}, skipping order.")
         if market_bias == "long":       
-            logging.info(f"Market bias is {market_bias} for {symbol}, going long.")
-            dataframe.loc[:, ['enter_long', 'enter_tag']] = (1, 'entry_reason')
+            dataframe.loc[:, ['enter_long', 'enter_tag']] = (1, f"entered by market bias {market_bias}, not overruled")
+            s = f"Market bias is {market_bias} for {symbol}, going long."
+            logging.info(s)
+            self.dp.send_msg(s)
+            
         if market_bias == "short":             
-            logging.info(f"Market bias is {market_bias} for {symbol}, going short.")
-            dataframe.loc[:, ['enter_short', 'enter_tag']] = (1, 'entry_reason')
+            dataframe.loc[:, ['enter_short', 'enter_tag']] = (1, f"entered by market bias {market_bias}, not overruled")
+            s = f"Market bias is {market_bias} for {symbol}, going short."
+            logging.info(s)
+            self.dp.send_msg(s)
 
         return dataframe
 
