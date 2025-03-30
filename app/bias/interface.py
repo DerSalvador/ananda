@@ -15,6 +15,7 @@ class BiasResponse(BaseModel):
     bias: BiasType
     error: Optional[str] = None
     usedSymbol: bool = False
+    reason: str = ""
 
 class BiasInterface():
     ignore = False

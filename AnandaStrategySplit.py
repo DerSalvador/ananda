@@ -104,18 +104,20 @@ class AnandaStrategySplit(IStrategy):
 
     def get_bias(self, pair):
         market_bias = {}
+        reason = ""
         try:
             response = requests.get(f"{bias_endpoint}/sentiment/{pair}")
             response.raise_for_status()
             market_bias = response.json()
+            reason = market_bias.get("final", {}).get("reason", "")
             market_bias = market_bias.get("final", {}).get("bias", "neutral")
         except Exception as e:
             s = f"Error getting market bias: {e}"
             logging.error(s)
-            market_bias = s
+            market_bias = "neutral"
             raise e
         finally:
-            return market_bias
+            return market_bias, reason
 
     def set_sentiment(self, pair, sentiment):
         try:
@@ -173,19 +175,20 @@ class AnandaStrategySplit(IStrategy):
         # dataframe.drop(dataframe.index, inplace=True)
         logging.warn("Populate entry with new api")
         symbol = metadata['pair'].split("/")[0]
-        market_bias = self.get_bias(symbol)
+        market_bias, reason = self.get_bias(symbol)
 
+        logging.info(f"Market bias is {market_bias} for {symbol}, reason: {reason}")
         if market_bias == "neutral":
             logging.info(f"Market bias is {market_bias} for {symbol}, skipping order.")
-            dataframe.loc[:, ['enter_long', 'enter_tag']] = (0, 'entry_reason')
-            dataframe.loc[:, ['enter_short', 'enter_tag']] = (0, 'entry_reason')
+            dataframe.loc[:, ['enter_long', 'enter_tag']] = (0, reason)
+            dataframe.loc[:, ['enter_short', 'enter_tag']] = (0, reason)
         elif market_bias == "long":       
-            dataframe.loc[:, ['enter_long', 'enter_tag']] = (1, f"entered by market bias {market_bias}, not overruled by custom_exit")
+            dataframe.loc[:, ['enter_long', 'enter_tag']] = (1, reason)
             s = f"Market bias is {market_bias} for {symbol}, going long."
             logging.info(s)
             self.dp.send_msg(s)
         elif market_bias == "short":
-            dataframe.loc[:, ['enter_short', 'enter_tag']] = (1, f"entered by market bias {market_bias}, not overruled by custom_exit")
+            dataframe.loc[:, ['enter_short', 'enter_tag']] = (1, reason)
             s = f"Market bias is {market_bias} for {symbol}, going short."
             logging.info(s)
             self.dp.send_msg(s)
@@ -229,7 +232,7 @@ class AnandaStrategySplit(IStrategy):
         is_short = trade.is_short
         is_long = not trade.is_short
         symbol = pair.split("/")[0]
-        market_bias = self.get_bias(symbol)
+        market_bias, reason = self.get_bias(symbol)
         sentiment = "long" if is_long else "short"
         self.set_sentiment(symbol, sentiment)
         logging.info(f"Market bias for {symbol} is {market_bias}")

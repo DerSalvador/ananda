@@ -46,21 +46,24 @@ def post_sentiment(request: BiasRequest) -> dict[str, BiasResponse]:
     # Always restrictive logic
     sentiment_values = [result.bias for result in sentiments.values()]
     if sentiment_values and all(s == sentiment_values[0] for s in sentiment_values):
-        logger.info(f"Final sentiment agreed on {sentiment_values[0]}")
-        sentiments["final"] = {"bias": sentiment_values[0]}
+        reason = f"Final sentiment agreed on {sentiment_values[0]}"
+        logger.info(reason)
+        sentiments["final"] = {"bias": sentiment_values[0], "reason": reason}
     else:
         logger.warn(f"Final sentiment is NEUTRAL")
-        sentiments["final"] = {"bias": BiasType.NEUTRAL, "error": "Sentiments do not agree"}
+        sentiments["final"] = {"bias": BiasType.NEUTRAL, "error": "Sentiments do not agree", "reason": "Sentiments do not agree"}
 
     # Check back on real values from custom_exit and reverse trend if needed
     real_sentiment = get_real_sentiment(request.symbol)
     if sentiments["final"]["bias"] != BiasType.NEUTRAL:
         if real_sentiment == BiasType.LONG and sentiments["final"]["bias"] == BiasType.SHORT:
-            sentiments["final"]["bias"] = BiasType.LONG
             logger.info(f"Real sentiment: LONG, Reversing final sentiment")
+            sentiments["final"]["bias"] = BiasType.LONG
+            sentiments["final"]["reason"] = "Original sentiment was SHORT, but real sentiment is LONG, REVERSING"
         elif real_sentiment == BiasType.SHORT and sentiments["final"]["bias"] == BiasType.LONG:
-            sentiments["final"]["bias"] = BiasType.SHORT
             logger.info(f"Real sentiment: SHORT, Reversing final sentiment")
+            sentiments["final"]["bias"] = BiasType.SHORT
+            sentiments["final"]["reason"] = "Original sentiment was LONG, but real sentiment is SHORT, REVERSING"
     return sentiments
 
 class UpdateBiasRequest(BaseModel):
