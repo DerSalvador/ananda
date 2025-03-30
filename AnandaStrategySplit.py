@@ -117,6 +117,13 @@ class AnandaStrategySplit(IStrategy):
         finally:
             return market_bias
 
+    def set_sentiment(self, pair, sentiment):
+        try:
+            response = requests.post(f"{bias_endpoint}/sentiment/{pair}", json={"bias": sentiment})
+            response.raise_for_status()
+        except Exception as e:
+            logging.error(f"Error setting sentiment: {e}")
+
     def get_leverage(self, pair, proposed_leverage):
         leverage = 5 # proposed_leverage
         try:
@@ -223,6 +230,8 @@ class AnandaStrategySplit(IStrategy):
         is_long = not trade.is_short
         symbol = pair.split("/")[0]
         market_bias = self.get_bias(symbol)
+        sentiment = "long" if is_long else "short"
+        self.set_sentiment(symbol, sentiment)
         logging.info(f"Market bias for {symbol} is {market_bias}")
 
         if market_bias == "long" and is_short:

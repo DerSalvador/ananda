@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from db import get_leverage, update_leverage
+from db import get_leverage, get_real_sentiment, update_leverage, update_sentiment
 from bias import get_all_configs, get_biases, getInterfaces, update_bias, update_config
 from pydantic import BaseModel
 from bias.interface import BiasRequest, BiasResponse, BiasType
@@ -51,6 +51,16 @@ def post_sentiment(request: BiasRequest) -> dict[str, BiasResponse]:
     else:
         logger.warn(f"Final sentiment is NEUTRAL")
         sentiments["final"] = {"bias": BiasType.NEUTRAL, "error": "Sentiments do not agree"}
+
+    # Check back on real values from custom_exit and reverse trend if needed
+    real_sentiment = get_real_sentiment(request.symbol)
+    if sentiments["final"]["bias"] != BiasType.NEUTRAL:
+        if real_sentiment == BiasType.LONG and sentiments["final"]["bias"] == BiasType.SHORT:
+            sentiments["final"]["bias"] = BiasType.LONG
+            logger.info(f"Real sentiment: LONG, Reversing final sentiment")
+        elif real_sentiment == BiasType.SHORT and sentiments["final"]["bias"] == BiasType.LONG:
+            sentiments["final"]["bias"] = BiasType.SHORT
+            logger.info(f"Real sentiment: SHORT, Reversing final sentiment")
     return sentiments
 
 class UpdateBiasRequest(BaseModel):
@@ -58,7 +68,7 @@ class UpdateBiasRequest(BaseModel):
     active: bool
 
 @app.get("/", response_class=HTMLResponse)
-async def get_config_page(request: Request):
+def get_config_page(request: Request):
     return templates.TemplateResponse("config.html", {"request": request, "biases": get_biases(), "leverage": get_leverage(), "configs": get_all_configs()})
 
 class UpdateLeverageRequest(BaseModel):
@@ -66,30 +76,36 @@ class UpdateLeverageRequest(BaseModel):
     leverage: float
 
 @app.get("/leverage")
-async def _get_leverage(pair: str = "default"):
+def _get_leverage(pair: str = "default"):
     return {"leverage": get_leverage(pair)}
 
 @app.post("/update-leverage")
-async def _update_leverage(data: UpdateLeverageRequest):
+def _update_leverage(data: UpdateLeverageRequest):
     update_leverage(data.pair, data.leverage)
     return {"status": "success", "message": "Leverage updated"}
 
 @app.post("/update-bias")
-async def _update_bias(data: UpdateBiasRequest):
+def _update_bias(data: UpdateBiasRequest):
     update_bias(data.name, data.active)
     return {"status": "success", "message": "Bias updated"}
 
 @app.get("/configs")
-async def _get_configs():
+def _get_configs():
     return get_all_configs()
 
 class UpdateConfigRequest(BaseModel):
     name: str
     value: str
 @app.post("/config")
-async def _update_config(data: UpdateConfigRequest):
+def _update_config(data: UpdateConfigRequest):
     update_config(data.name, data.value)
     return {"status": "success", "message": "Config updated"}
+
+@app.post("/sentiment/{symbol}")
+def _update_sentiment(symbol: str, updateRequest: BiasResponse):
+    logger.info(f"Updating sentiment for {symbol} to {updateRequest.bias}")
+    update_sentiment(symbol, updateRequest.bias)
+    return {"status": "success", "message": "Sentiment updated"}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=9000, reload=True)

@@ -30,8 +30,10 @@ def update_bias(bias, active=True):
 
 def update_config(configname, configvalue):
     table = biasdb.table("configs")
+    get_config.cache_clear()
     table.upsert({"name": configname, "value": configvalue}, Query().name == configname)
 
+@cache
 def get_config(configname, default=None):
     table = biasdb.table("configs")
     config = table.get(Query().name == configname)
@@ -81,6 +83,9 @@ def init():
             biasdb.insert({"name": bias, "active": True})
     configs = {
         "GreedAndFearLimit": 10,
+        "ReverseTrendCheckBackSeconds": 600,
+        "ReverseTrendCheckMinCount": 60,
+        "ReverseTrendCheckPercentageAgreeThreshold": 100,
     }
     for name, value in configs.items():
         table = biasdb.table("configs")
