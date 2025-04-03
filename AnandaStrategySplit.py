@@ -3,6 +3,7 @@
 # isort: skip_file
 # --- Do not remove these imports ---
 import numpy as np
+import time
 import pandas as pd
 from datetime import datetime, timedelta, timezone
 from pandas import DataFrame
@@ -39,6 +40,28 @@ import talib.abstract as ta
 import pandas_ta as pta
 import requests
 from technical import qtpylib
+from collections import deque
+
+class TimeBasedDeque:
+    def __init__(self, max_age=3600):
+        self.max_age = max_age
+        self.queue = deque()
+
+    def add(self, item):
+        """Insert a new item with the current timestamp."""
+        timestamp = time.time()
+        self.queue.append((timestamp, item))
+        self.cleanup()
+
+    def cleanup(self):
+        now = time.time()
+        while self.queue and (now - self.queue[0][0] > self.max_age):
+            self.queue.popleft()
+
+    def get_items_last_x_seconds(self, seconds):
+        """Retrieve items from the last X seconds."""
+        threshold = time.time() - (seconds)
+        return [item for t, item in self.queue if t >= threshold]
 
 
 bias_endpoint = os.getenv("BIAS_ENDPOINT", "")
@@ -227,20 +250,60 @@ class AnandaStrategySplit(IStrategy):
         logging.warn("Ignore exit, using roi and stoploss")
         return dataframe
 
+    def is_linear_decreasing(self, profits, threshold=0.05):
+        period = len(profits)
+        y = np.array(profits, dtype=np.float64)
+        slope = ta.LINEARREG_SLOPE(y, timeperiod=period)
+
+        if slope is None:
+            return False
+
+        latest_slope = slope[-1]
+
+        return latest_slope < 0 and abs(latest_slope) < threshold
+
+    reverse_dict = {}
+    def reverse_logic(self, symbol: str, profit: float):
+        if symbol not in self.reverse_dict:
+            self.reverse_dict[symbol] = {}
+        if "start" not in self.reverse_dict[symbol]:
+            self.reverse_dict[symbol]["start"] = int(time.time())
+        minutes_past = (int(time.time()) - self.reverse_dict[symbol]["start"]) // 60
+
+        # append profit
+        if not "profits" in self.reverse_dict[symbol]:
+            self.reverse_dict[symbol]["profits"] = TimeBasedDeque(max_age=3600)
+        self.reverse_dict[symbol]["profits"].add(profit)
+
+        # get profits from last ten minutes
+        profits = self.reverse_dict[symbol]["profits"].get_items_last_x_seconds(600)
+        if len(profits) > 60:
+            # is profits all negative
+            all_negative = all(p < 0 for p in profits)
+            if not all_negative:
+                return False
+            # is earlier profit greater than current profit
+            first_profit = profits[0]
+            current_profit = profits[-1]
+            first_profit_greater = first_profit > current_profit
+            if not first_profit_greater:
+                return False
+            if self.is_linear_decreasing(profits, threshold=0.1):
+                logging.info(f"Reversing logic for {symbol}, profits: {profits}")
+                return True
+        return False
+
     def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float,
                     current_profit: float, **kwargs):
         is_short = trade.is_short
         is_long = not trade.is_short
         symbol = pair.split("/")[0]
-        market_bias, reason = self.get_bias(symbol)
-        sentiment = "long" if is_long else "short"
-        self.set_sentiment(symbol, sentiment)
-        logging.info(f"Market bias for {symbol} is {market_bias}")
 
-        if market_bias == "long" and is_short:
-            logging.info(f"Trade is short but bias is long, selling short")
-            return True
-            
-        if market_bias == "short" and is_long:
-            logging.info(f"Trade is long but bias is short, selling long")
+        if self.reverse_logic(pair, current_profit):
+            if is_long:
+                self.set_sentiment(symbol, "short")
+                logging.info(f"Trade is long, but profits are consistently negative. Reverse logic applies. Marking sentiment as short.")
+            if is_short:
+                self.set_sentiment(symbol, "long")
+                logging.info(f"Trade is short, but profits are consistently negative. Reverse logic applies. Marking sentiment as long.")
             return True
