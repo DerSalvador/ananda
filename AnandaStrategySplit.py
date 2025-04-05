@@ -82,12 +82,10 @@ class AnandaStrategySplit(IStrategy):
     You should keep:
     - timeframe, minimal_roi, stoploss, trailing_*
     """
-    api_profit: "http://freqtrade:'&&Liz270117!!'@freqtrade-clusterip-bot-ananda.bot-ananda.svc.cluster.local:8084/api/v1/profit"
-
-    bot_username = "freqtrade"
-    bot_password = "&&LizStrategy!!"
-
-
+    api_profit = None
+    bot_username = None
+    bot_password = None
+    
     # Strategy interface version - allow new iterations of the strategy interface.
     # Check the documentation or the Sample strategy to get the latest version.
     INTERFACE_VERSION = 3
@@ -314,6 +312,14 @@ class AnandaStrategySplit(IStrategy):
                 logging.info(f"Trade is short, but profits are consistently negative. Reverse logic applies. Marking sentiment as long.")
             return True
 
+    def bot_start(self, **kwargs) -> None:
+        self.api_profit = self.config['bias']['api_profit']
+        self.bot_username =  self.config['api_server']['username']
+        self.bot_password =  self.config['api_server']['password']
+        logging.info(f"Bot or bot loop started...")
+
+    def bot_loop_start(self, **kwargs) -> None:
+        self.bot_start()
 #############################################################
 # Winrate
     # def make_get_request_with_retry(self, url, auth, retries=20, sleep_time=10):
