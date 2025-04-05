@@ -82,12 +82,14 @@ class AnandaStrategySplit(IStrategy):
     You should keep:
     - timeframe, minimal_roi, stoploss, trailing_*
     """
+    api_profit: "http://freqtrade:'&&Liz270117!!'@freqtrade-clusterip-bot-ananda.bot-ananda.svc.cluster.local:8084/api/v1/profit"
+
     # Strategy interface version - allow new iterations of the strategy interface.
     # Check the documentation or the Sample strategy to get the latest version.
     INTERFACE_VERSION = 3
 
     # Optimal timeframe for the strategy.
-    timeframe = "5m"
+    timeframe = "1m"
 
     # Can this strategy go short?
     can_short: bool = True
@@ -307,3 +309,73 @@ class AnandaStrategySplit(IStrategy):
                 self.set_sentiment(symbol, "long")
                 logging.info(f"Trade is short, but profits are consistently negative. Reverse logic applies. Marking sentiment as long.")
             return True
+
+#############################################################
+
+    def make_get_request_with_retry(self, url, auth, retries=20, sleep_time=10):
+        lock = threading.Lock()
+        lock.acquire()
+        response = None
+        time.sleep(self.spot_pair_delay)
+        s = ""
+        # Acquire a lock for the label to ensure only one thread processes it
+        try:
+            attempt = 0
+            for attempt in range(0, retries):
+                try:
+                    time.sleep(self.spot_pair_delay)
+                    requests.adapters.HTTPAdapter(pool_maxsize = 500, pool_connections=100, max_retries=10)
+                    response = requests.get(url, auth=auth, timeout=120)
+                    response.raise_for_status()  # Ensure we notice bad responses
+                    s = f"Successful request to endpoint {url}"
+                    attempt = 0
+                    return response  # Break the loop and return response if successful
+                except Exception as ex:
+                    s = f"Retries exhausted, giving up on request {url}"
+                    self.logme(f"Attempt {attempt + 1} failed. Error: {ex}, {s}", telegram=True)
+                    time.sleep(sleep_time)
+        except Exception as e:
+            s = f"Exception in make request: {e}"
+            # self.dp.send_msg(s)
+            traceback.print_exc()
+            logging.error(s)
+        finally:
+            lock.release()
+            logging.error(s)
+
+    def getJsonFromAPI(self, endpoint):
+        url = endpoint
+        auth = (self.bot_username, self.bot_password)
+        time.sleep(self.spot_pair_delay)
+        response = None
+        try:
+            response = self.make_get_request_with_retry(self, url, auth)
+        except Exception as e:
+            s = f"self.make_get_request_with_retry exception: {e}"
+            logging.error(s, telegram=True)
+            traceback.print_exc()
+
+        finally:
+            if response is None:
+                data = {}
+            else:
+                data = response.json()
+            return data
+
+    def getWinrate(self):
+        json = None
+        try:
+            json = self.getJsonFromAPI(self.api_profit)
+        except Exception as e:
+            self.logme(f"could not get profit from hedge_bot {self.hedge_bot_api_profit}, continuing")
+            traceback.print_exc()
+
+        if json:
+            # profit_all_coin = json['profit_all_coin']
+            # winning_trades = json['winning_trades']
+            # losing_trades = json['losing_trades']
+            winrate = json['winrate']
+        else:
+            raise Exception(f"No Data returned from Profit endpint {api_profit}")
+        return winrate
+
