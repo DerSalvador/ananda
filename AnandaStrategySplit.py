@@ -254,17 +254,35 @@ class AnandaStrategySplit(IStrategy):
         logging.warn("Ignore exit, using roi and stoploss")
         return dataframe
 
-    def is_linear_decreasing(self, profits, threshold=0.05):
-        period = len(profits)
-        y = np.array(profits, dtype=np.float64)
-        slope = ta.LINEARREG_SLOPE(y, timeperiod=period)
+    def is_linear_decreasing(self, profits, threshold=5.0):
+        if len(profits) < 2:
+            return False  # not enough data to compute a line
 
-        if slope is None:
+        x = np.arange(len(profits))
+        y = np.array(profits, dtype=np.float64)
+
+        # Fit linear regression line: y = mx + c
+        m, c = np.polyfit(x, y, 1)
+        y_fit = m * x + c
+
+        # Check if slope is negative (i.e., decreasing)
+        m = round(m,2)
+        if m >= 0:
             return False
 
-        latest_slope = slope[-1]
+        # Calculate deviation from the line
+        deviation = y - y_fit
+        deviation = np.round(deviation, 2)
+        std_dev = np.std(deviation)
 
-        return latest_slope < 0 and abs(latest_slope) < threshold
+        if std_dev == 0:
+            return True  # perfectly linear
+
+        # Count how many points deviate more than one std deviation
+        outliers = np.abs(deviation) > std_dev
+        percent_outliers = np.sum(outliers) / len(profits) * 100
+
+        return percent_outliers <= threshold
 
     reverse_dict = {}
     def reverse_logic(self, symbol: str, profit: float):
