@@ -17,6 +17,7 @@ class CoinGeckoMarket(BiasInterface):
             'sparkline': False
         }
         response = requests.get(url, params=params)
+        response.raise_for_status()  # Raise an error for bad responses
         data = response.json()
         return data
 
@@ -40,8 +41,5 @@ class CoinGeckoMarket(BiasInterface):
 
     def bias(self, biasRequest: BiasRequest) -> BiasResponse:
         market_data = self.get_crypto_market_data()
-        if market_data.get("status", {}).get("error_code"):
-            pass
-            raise Exception(market_data)
         bias = self.calculate_trend_bias(market_data)
         return BiasResponse(bias=bias)

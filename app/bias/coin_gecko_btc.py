@@ -20,9 +20,8 @@ class CoinGeckoBTC(BiasInterface):
             "x_cg_pro_api_key": COINGECKO_API_KEY,
         }
         response = requests.get(endpoint, params=params, timeout=10)
+        response.raise_for_status()  # Raise an error for bad responses
         data = response.json()
-        if data.get("status", {}).get("error_code"):
-            raise Exception(data)
         return data[0] if data else None
 
     def analyze_trend_day(self, bitcoin_data):
