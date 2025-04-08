@@ -16,6 +16,7 @@ biasdb = TinyDB(f"{CONFIG_PATH}/biasdb.json")
 
 def get_biases():
     biases = biasdb.all()
+    logger.info(f"Getting biases: {biases}")
     return biases
 
 def get_bias(bias):
@@ -24,7 +25,7 @@ def get_bias(bias):
 def update_bias(bias, active=True):
     # if doesn't exist, create
     if not biasdb.search(Query().name == bias):
-        biasdb.insert({"name": bias, "active": active})
+        biasdb.insert({"name": bias, "active": active, "paid": False})
     else:
         biasdb.update({"active": active}, Query().name == bias)
     getInterfaces.cache_clear()
@@ -50,7 +51,7 @@ def get_all_configs():
 current_dir = os.path.dirname(__file__)
 
 @cache
-def getInterfaces():
+def getInterfaces(all = False):
     # List all Python files in the directory
     interfaces = {}
     for filename in os.listdir(current_dir):
@@ -71,7 +72,7 @@ def getInterfaces():
                                 obj.ignore = True
                             else:
                                 obj.ignore = False
-                        if not obj.ignore:
+                        if not obj.ignore or all:
                             interfaces[interface_name] = obj()
                         else:
                             logger.info(f"Ignoring {interface_name}")
@@ -81,9 +82,12 @@ def getInterfaces():
     return interfaces
 
 def init():
-    for bias in getInterfaces().keys():
+    interfaces = getInterfaces(all=True)
+    for bias in interfaces.keys():
         if not biasdb.search(Query().name == bias):
             biasdb.insert({"name": bias, "active": True})
+        else:
+            biasdb.update({"paid": interfaces[bias].paid}, Query().name == bias)
     configs = DEFAULT_CONFIG
     for name, value in configs.items():
         table = biasdb.table("configs")

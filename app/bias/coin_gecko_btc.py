@@ -5,6 +5,7 @@ from bias.interface import BiasInterface, BiasRequest, BiasResponse, BiasType
 
 
 class CoinGeckoBTC(BiasInterface):
+    paid = True
     def get_bitcoin_data(self):
         API_URL = "https://pro-api.coingecko.com/api/v3"
         COINGECKO_API_KEY=os.getenv("COINGECKO_API_KEY", "")

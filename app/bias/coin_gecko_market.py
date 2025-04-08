@@ -6,6 +6,7 @@ from bias.interface import BiasInterface, BiasRequest, BiasResponse, BiasType
 logger = get_logger()
 
 class CoinGeckoMarket(BiasInterface):
+    paid = True
     def get_crypto_market_data(self):
         api_key = os.getenv("COINGECKO_API_KEY", "")
         url = f"https://pro-api.coingecko.com/api/v3/coins/markets?x_cg_pro_api_key={api_key}"

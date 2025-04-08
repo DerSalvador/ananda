@@ -11,6 +11,7 @@ logger = get_logger()
 
 
 class SantimentBias(BiasInterface):
+    paid = True
     def __init__(self):
         self.api_key = os.getenv("SANTIMENT_API_KEY", "")
         self.metric = "sentiment_weighted_total_1d_v2"

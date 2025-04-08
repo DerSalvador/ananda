@@ -54,7 +54,7 @@
             {% for bias in biases %}
             <li class="flex items-center">
                 <input type="checkbox" onchange="toggleBias('{{ bias.name }}', this)" class="mr-2" {% if bias.active %}checked{% endif %}>
-                <label class="text-lg">{{ bias.name }}</label>
+                <label class="text-lg">{{ bias.name }} {{ "(Paid)" if bias.paid else "" }} </label>
             </li>
             {% endfor %}
         </ul>

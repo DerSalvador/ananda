@@ -19,6 +19,7 @@ class BiasResponse(BaseModel):
 
 class BiasInterface():
     ignore = False
+    paid = False
     @abstractmethod
     def bias(self, biasRequest: BiasRequest) -> BiasResponse:
         raise NotImplementedError("Method not implemented")
