@@ -65,10 +65,12 @@ def getInterfaces():
                         # interface_name = filename[:-3]
                         # interface_name = obj.__name__
                         interface_name = name
-                        exising_bias = get_bias(interface_name)
-                        if exising_bias:
-                            if not exising_bias[0]["active"]:
+                        existing_bias = get_bias(interface_name)
+                        if existing_bias:
+                            if not existing_bias[0]["active"]:
                                 obj.ignore = True
+                            else:
+                                obj.ignore = False
                         if not obj.ignore:
                             interfaces[interface_name] = obj()
                         else:
