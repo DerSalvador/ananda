@@ -2,6 +2,7 @@ from functools import cache
 import os
 import importlib
 import inspect
+from constants import DEFAULT_CONFIG
 from bias.interface import BiasInterface
 from utils import get_logger
 from tinydb import TinyDB, Query
@@ -81,12 +82,7 @@ def init():
     for bias in getInterfaces().keys():
         if not biasdb.search(Query().name == bias):
             biasdb.insert({"name": bias, "active": True})
-    configs = {
-        "GreedAndFearLimit": 10,
-        "ReverseTrendCheckBackSeconds": 600,
-        "ReverseTrendCheckMinCount": 60,
-        "ReverseTrendCheckPercentageAgreeThreshold": 100,
-    }
+    configs = DEFAULT_CONFIG
     for name, value in configs.items():
         table = biasdb.table("configs")
         if not table.get(Query().name == name):
