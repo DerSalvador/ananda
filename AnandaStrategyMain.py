@@ -380,28 +380,28 @@ def monitor_and_manage(client, loss_threshold, profit_threshold, leverage, stake
 
         time.sleep(sleep)
 
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(description="Binance Futures Position Manager")
-#     parser.add_argument("--apikey", required=True, help="Your Binance API Key")
-#     parser.add_argument("--apisecret", required=True, help="Your Binance API Secret")
-#     parser.add_argument("--loss", type=float, default=5.0, help="Loss percentage to trigger position reversal (default: 5%)")
-#     parser.add_argument("--profit", type=float, default=6.0, help="Profit percentage to trigger position closure (default: 6%)")
-#     parser.add_argument("--sleep", type=float, default=5.0, help="sleep in seconds before api call")
-#     parser.add_argument("--leverage", type=float, default=5.0, help="leverage")
-#     parser.add_argument("--stake", type=float, default=50.0, help="Stake amount per trade (default: 500 USDT)")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Binance Futures Position Manager")
+    parser.add_argument("--apikey", required=True, help="Your Binance API Key")
+    parser.add_argument("--apisecret", required=True, help="Your Binance API Secret")
+    parser.add_argument("--loss", type=float, default=5.0, help="Loss percentage to trigger position reversal (default: 5%)")
+    parser.add_argument("--profit", type=float, default=6.0, help="Profit percentage to trigger position closure (default: 6%)")
+    parser.add_argument("--sleep", type=float, default=5.0, help="sleep in seconds before api call")
+    parser.add_argument("--leverage", type=float, default=5.0, help="leverage")
+    parser.add_argument("--stake", type=float, default=50.0, help="Stake amount per trade (default: 500 USDT)")
 
-#     args = parser.parse_args()
+    args = parser.parse_args()
 
-#     coinGeckoAPI.coinGeckoAPIKey = "CG-AgEZRgMf3iLk1S8CwyCKp7N3"
-#     coinGeckoAPI.apikey = args.apikey
-#     coinGeckoAPI.apisecret = args.apisecret
-#     sleep = args.sleep
-#     leverage = args.leverage
-#     stake_amount = args.stake
+    coinGeckoAPI.coinGeckoAPIKey = "CG-AgEZRgMf3iLk1S8CwyCKp7N3"
+    coinGeckoAPI.apikey = args.apikey
+    coinGeckoAPI.apisecret = args.apisecret
+    sleep = args.sleep
+    leverage = args.leverage
+    stake_amount = args.stake
 
-#     client = Client(args.apikey, args.apisecret)
+    client = Client(args.apikey, args.apisecret)
 
-#     logging.info(f"Monitoring positions for {args.loss}% loss threshold and {args.profit}% profit threshold...")
-#     monitor_and_manage(client, args.loss, args.profit, leverage, stake_amount)
+    logging.info(f"Monitoring positions for {args.loss}% loss threshold and {args.profit}% profit threshold...")
+    monitor_and_manage(client, args.loss, args.profit, leverage, stake_amount)
 
 

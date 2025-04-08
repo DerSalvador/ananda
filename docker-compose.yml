@@ -44,6 +44,6 @@ services:
     ports:
       - "127.0.0.1:9090:80"
     environment:
-      COINGECKO_API_KEY: xxx
-      BINANCE_API_KEY: xxx
-      BINANCE_SECRET_KEY: xxx
+      COINGECKO_API_KEY: X
+      BINANCE_API_KEY: X
+      BINANCE_SECRET_KEY: X

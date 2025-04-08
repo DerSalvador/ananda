@@ -53,6 +53,9 @@ class TimeBasedDeque:
         self.queue.append((timestamp, item))
         self.cleanup()
 
+    def length(self):
+        return len(self.queue)
+        
     def cleanup(self):
         now = time.time()
         while self.queue and (now - self.queue[0][0] > self.max_age):
