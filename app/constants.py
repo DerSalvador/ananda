@@ -6,4 +6,6 @@ DEFAULT_CONFIG = {
     "ReverseTrendCheckPercentageAgreeThreshold": 100,
     "SantimentFromTimeDaysAgo": 36,
     "SantimentToTimeDaysAgo": 30,
+    "SantimentThresholdLong": 0.25,
+    "SantimentThresholdShort": -0.25,
 }
