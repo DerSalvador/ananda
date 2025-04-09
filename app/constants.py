@@ -8,4 +8,5 @@ DEFAULT_CONFIG = {
     "SantimentToTimeDaysAgo": 30,
     "SantimentThresholdLong": 0.25,
     "SantimentThresholdShort": -0.25,
+    "ReturnOnInvest": 0.08,
 }

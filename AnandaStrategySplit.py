@@ -132,6 +132,13 @@ class AnandaStrategySplit(IStrategy):
     buy_rsi = IntParameter(10, 40, default=30, space="buy")
     sell_rsi = IntParameter(60, 90, default=70, space="sell")
 
+    def get_config(self):
+        response = requests.get(f"{bias_endpoint}/configs")
+        response.raise_for_status()
+        config_json = response.json()
+        config_dict = {item['name']: item['value'] for item in config_json}
+        return config_dict
+
     def get_bias(self, pair):
         market_bias = {}
         reason = ""
@@ -324,6 +331,15 @@ class AnandaStrategySplit(IStrategy):
         is_long = not trade.is_short
         symbol = pair.split("/")[0]
 
+        config = self.get_config()
+        self.return_on_invest = float(config.get("ReturnOnInvest", 0.08))
+
+        if current_profit >= self.return_on_invest:
+            message = f"current_profit={current_profit} is greater or equal {self.return_on_invest}, realizing profit "
+            logging.info(message)
+            self.dp.send_msg(message)
+            return message
+
         if self.reverse_logic(pair, current_profit):
             if is_long:
                 self.set_sentiment(symbol, "short")
@@ -341,71 +357,4 @@ class AnandaStrategySplit(IStrategy):
 
     def bot_loop_start(self, **kwargs) -> None:
         self.bot_start()
-#############################################################
-# Winrate
-    # def make_get_request_with_retry(self, url, auth, retries=20, sleep_time=10):
-    #     lock = threading.Lock()
-    #     lock.acquire()
-    #     response = None
-    #     time.sleep(self.spot_pair_delay)
-    #     s = ""
-    #     # Acquire a lock for the label to ensure only one thread processes it
-    #     try:
-    #         attempt = 0
-    #         for attempt in range(0, retries):
-    #             try:
-    #                 time.sleep(self.spot_pair_delay)
-    #                 requests.adapters.HTTPAdapter(pool_maxsize = 500, pool_connections=100, max_retries=10)
-    #                 response = requests.get(url, auth=auth, timeout=120)
-    #                 response.raise_for_status()  # Ensure we notice bad responses
-    #                 s = f"Successful request to endpoint {url}"
-    #                 attempt = 0
-    #                 return response  # Break the loop and return response if successful
-    #             except Exception as ex:
-    #                 s = f"Retries exhausted, giving up on request {url}"
-    #                 self.logme(f"Attempt {attempt + 1} failed. Error: {ex}, {s}", telegram=True)
-    #                 time.sleep(sleep_time)
-    #     except Exception as e:
-    #         s = f"Exception in make request: {e}"
-    #         # self.dp.send_msg(s)
-    #         traceback.print_exc()
-    #         logging.error(s)
-    #     finally:
-    #         lock.release()
-    #         logging.error(s)
-
-    # def getJsonFromAPI(self, endpoint):
-    #     url = endpoint
-    #     auth = (self.bot_username, self.bot_password)
-    #     response = None
-    #     try:
-    #         response = self.make_get_request_with_retry(self, url, auth)
-    #     except Exception as e:
-    #         s = f"self.make_get_request_with_retry exception: {e}"
-    #         logging.error(s, telegram=True)
-    #         traceback.print_exc()
-
-    #     finally:
-    #         if response is None:
-    #             data = {}
-    #         else:
-    #             data = response.json()
-    #         return data
-
-    # def getWinrate(self):
-    #     json = None
-    #     try:
-    #         json = self.getJsonFromAPI(self.api_profit)
-    #     except Exception as e:
-    #         self.logme(f"could not get profit from hedge_bot {self.hedge_bot_api_profit}, continuing")
-    #         traceback.print_exc()
-
-    #     if json:
-    #         # profit_all_coin = json['profit_all_coin']
-    #         # winning_trades = json['winning_trades']
-    #         # losing_trades = json['losing_trades']
-    #         winrate = json['winrate']
-    #     else:
-    #         raise Exception(f"No Data returned from Profit endpint {api_profit}")
-    #     return winrate
 
