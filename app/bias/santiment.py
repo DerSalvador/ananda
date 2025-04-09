@@ -72,7 +72,7 @@ class SantimentBias(BiasInterface):
         threshold = float(get_config("SantimentThreshold", 1.0))
         values = self.fetch_sentiment_data(biasRequest.symbol)
 
-        if values is None or len(values) < 6:
+        if values is None or len(values) < 2:
             return BiasResponse(
                 bias=BiasType.NEUTRAL,
                 error="Not enough data to determine signal.",

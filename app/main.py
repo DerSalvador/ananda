@@ -41,7 +41,7 @@ def post_sentiment(request: BiasRequest) -> dict[str, BiasResponse]:
             sentiments[interface_name] = sentiment
         except Exception as e:
             sentiments[interface_name] = BiasResponse(bias=BiasType.NEUTRAL, error=str(e))
-            logger.error(f"Error: {e} for {interface_name} and {request.symbol}.")
+            logger.exception(f"Error: {e} for {interface_name} and {request.symbol}.")
 
     # Always restrictive logic
     sentiment_values = [result.bias for result in sentiments.values()]
