@@ -2,8 +2,6 @@
 
 FROM python:3.10-slim-bookworm as builder
 
-RUN apt-get update --fix-missing && apt-get install -y --fix-missing build-essential
-
 WORKDIR /app
 
 COPY requirements.txt .
