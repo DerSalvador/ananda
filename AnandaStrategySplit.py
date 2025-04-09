@@ -132,6 +132,8 @@ class AnandaStrategySplit(IStrategy):
     buy_rsi = IntParameter(10, 40, default=30, space="buy")
     sell_rsi = IntParameter(60, 90, default=70, space="sell")
 
+    return_on_invest = 0.08
+
     def get_config(self):
         response = requests.get(f"{bias_endpoint}/configs")
         response.raise_for_status()
