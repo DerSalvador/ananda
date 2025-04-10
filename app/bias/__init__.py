@@ -16,8 +16,13 @@ biasdb = TinyDB(f"{CONFIG_PATH}/biasdb.json")
 
 def get_biases():
     biases = biasdb.all()
+    all_names = getAllInterfaceNames()
+    filtered_biases = []
+    for bias in biases:
+        if bias["name"] in all_names:
+            filtered_biases.append(bias)
     logger.info(f"Getting biases: {biases}")
-    return biases
+    return filtered_biases
 
 def get_bias(bias):
     return biasdb.search(Query().name == bias)
@@ -49,6 +54,25 @@ def get_all_configs():
 
 # Get the directory of the current file
 current_dir = os.path.dirname(__file__)
+
+@cache
+def getAllInterfaceNames():
+    # List all Python files in the directory
+    interfaces = []
+    for filename in os.listdir(current_dir):
+        if filename.endswith(".py") and filename not in ["__init__.py", "interface.py"]:
+            try:
+                module_name = f"bias.{filename[:-3]}"
+                module = importlib.import_module(module_name)
+
+                # Inspect the module for classes implementing BiasInterface
+                for name, obj in inspect.getmembers(module, inspect.isclass):
+                    if issubclass(obj, BiasInterface) and obj is not BiasInterface:
+                        interfaces.append(name)
+            except Exception as e:
+                logger.error(f"Error loading {filename}: {e}")
+    logger.info(f"Getting interfaces: {interfaces}")
+    return interfaces
 
 @cache
 def getInterfaces(all = False):
