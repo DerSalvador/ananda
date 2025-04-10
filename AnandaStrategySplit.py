@@ -85,7 +85,7 @@ class AnandaStrategySplit(IStrategy):
     You should keep:
     - timeframe, minimal_roi, stoploss, trailing_*
     """
-    api_profit = None
+    api_profit = ""
     bot_username = None
     bot_password = None
     
@@ -327,8 +327,16 @@ class AnandaStrategySplit(IStrategy):
                 return True
         return False
 
-    def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float,
-                    current_profit: float, **kwargs):
+    def calculate_winrate(self):
+        logging.info(f"Calculating winrate from profit API")
+        response = requests.get(self.api_profit)
+        response.raise_for_status()
+        winrate = response.json().get("winrate", 0.0)
+        return winrate
+
+    def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float, current_profit: float, **kwargs):
+        calculated_winrate = self.calculate_winrate()
+        logging.info(f"Calculated winrate: {calculated_winrate}")
         is_short = trade.is_short
         is_long = not trade.is_short
         symbol = pair.split("/")[0]
@@ -351,7 +359,11 @@ class AnandaStrategySplit(IStrategy):
                 logging.info(f"Trade is short, but profits are consistently negative. Reverse logic applies. Marking sentiment as long.")
             return True
 
+        return False
+
     def bot_start(self, **kwargs) -> None:
+        logging.info(f"Bot started...")
+        logging.info(f"Bot started with config: {self.config}")
         self.api_profit = self.config['bias']['api_profit']
         self.bot_username =  self.config['api_server']['username']
         self.bot_password =  self.config['api_server']['password']
