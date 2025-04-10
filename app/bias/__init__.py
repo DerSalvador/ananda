@@ -50,7 +50,12 @@ def get_config(configname, default=None):
 
 def get_all_configs():
     table = biasdb.table("configs")
-    return table.all()
+    all_configs = table.all()
+    filtered_configs = []
+    for config in all_configs:
+        if config["name"] in DEFAULT_CONFIG:
+            filtered_configs.append(config)
+    return filtered_configs
 
 # Get the directory of the current file
 current_dir = os.path.dirname(__file__)
