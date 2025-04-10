@@ -297,7 +297,7 @@ class AnandaStrategySplit(IStrategy):
         return percent_outliers <= threshold
 
     reverse_dict = {}
-    def reverse_logic(self, symbol: str, profit: float):
+    def reverse_logic(self, symbol: str, profit: float, config):
         if symbol not in self.reverse_dict:
             self.reverse_dict[symbol] = {}
         if "start" not in self.reverse_dict[symbol]:
@@ -310,28 +310,43 @@ class AnandaStrategySplit(IStrategy):
         self.reverse_dict[symbol]["profits"].add(profit)
 
         # get profits from last ten minutes
-        profits = self.reverse_dict[symbol]["profits"].get_items_last_x_seconds(600)
-        if len(profits) > 60:
+        seconds = int(config.get("ReverseTrendCheckBackSeconds", 600))
+        profits = self.reverse_dict[symbol]["profits"].get_items_last_x_seconds(seconds)
+        min_length = int(config.get("ReverseTrendCheckMinCount", 60))
+        if len(profits) > min_length:
             # is profits all negative
-            all_negative = all(p < 0 for p in profits)
-            if not all_negative:
-                return False
+            logging.info(f"Checking profits for {symbol}, profits: {profits}")
+            needs_all_negative = config.get("ReverseTrendCheckAllNegative", "true")
+            if needs_all_negative == "true":
+                all_negative = all(p < 0 for p in profits)
+                if not all_negative:
+                    return False
             # is earlier profit greater than current profit
-            first_profit = profits[0]
-            current_profit = profits[-1]
-            first_profit_greater = first_profit > current_profit
-            if not first_profit_greater:
-                return False
-            if self.is_linear_decreasing(profits, threshold=0.1):
+            needs_first_greater = config.get("ReverseTrendCheckFirstGreater", "true")
+            if needs_first_greater == "true":
+                first_profit = profits[0]
+                current_profit = profits[-1]
+                first_profit_greater = first_profit > current_profit
+                if not first_profit_greater:
+                    return False
+            needs_linear_decreasing = config.get("ReverseTrendCheckLinearDecreasing", "true")
+            if not needs_linear_decreasing == "true":
+                return True
+            threshold = float(config.get("ReverseTrendLinearDecreasingThresholdPercent", 5))
+            if self.is_linear_decreasing(profits, threshold=threshold):
                 logging.info(f"Reversing logic for {symbol}, profits: {profits}")
                 return True
         return False
 
     def calculate_winrate(self):
-        logging.info(f"Calculating winrate from profit API")
-        response = requests.get(self.api_profit)
-        response.raise_for_status()
-        winrate = response.json().get("winrate", 0.0)
+        winrate = 0.0
+        try:
+            logging.info(f"Calculating winrate from profit API")
+            response = requests.get(self.api_profit)
+            response.raise_for_status()
+            winrate = response.json().get("winrate", 0.0)
+        except Exception as e:
+            logging.exception(f"Error calculating winrate: {e}")
         return winrate
 
     def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float, current_profit: float, **kwargs):
@@ -350,7 +365,7 @@ class AnandaStrategySplit(IStrategy):
             self.dp.send_msg(message)
             return message
 
-        if self.reverse_logic(pair, current_profit):
+        if self.reverse_logic(pair, current_profit, config):
             if is_long:
                 self.set_sentiment(symbol, "short")
                 logging.info(f"Trade is long, but profits are consistently negative. Reverse logic applies. Marking sentiment as short.")
