@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script>
         async function toggleBias(biasName, checkbox) {
@@ -58,44 +59,44 @@
         });
     </script>
 </head>
-<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen">
+<body class="bg-gray-100 min-h-screen p-4">
     <!-- Biases -->
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl mt-10">
-        <h1 class="text-2xl font-bold mb-4">Bias Configuration</h1>
-        <ul class="space-y-2">
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto mt-6">
+        <h1 class="text-xl sm:text-2xl font-bold mb-4">Bias Configuration</h1>
+        <ul class="space-y-3">
             {% for bias in biases %}
             <li class="flex items-center">
                 <input type="checkbox" onchange="toggleBias('{{ bias.name }}', this)" class="mr-2" {% if bias.active %}checked{% endif %}>
-                <label class="text-lg">{{ bias.name }} {{ "(Paid)" if bias.paid else "" }}</label>
+                <label class="text-base sm:text-lg">{{ bias.name }} {{ "(Paid)" if bias.paid else "" }}</label>
             </li>
             {% endfor %}
         </ul>
     </div>
 
     <!-- Leverage -->
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl mt-6">
-        <h1 class="text-2xl font-bold mb-4">Futures</h1>
-        <div class="flex flex-col">
-            <label for="leverage-input" class="text-lg mb-2">Leverage</label>
-            <div class="flex items-center">
-                <input type="number" id="leverage-input" class="border p-2 mr-2 w-full" placeholder="Enter leverage" value="{{ leverage }}">
-                <button onclick="updateLeverage()" class="bg-blue-500 text-white p-2 rounded">Submit</button>
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto mt-6">
+        <h1 class="text-xl sm:text-2xl font-bold mb-4">Futures</h1>
+        <div class="flex flex-col space-y-2">
+            <label for="leverage-input" class="text-base sm:text-lg">Leverage</label>
+            <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                <input type="number" id="leverage-input" class="border p-2 w-full" placeholder="Enter leverage" value="{{ leverage }}">
+                <button onclick="updateLeverage()" class="bg-blue-500 text-white p-2 rounded w-full sm:w-auto">Submit</button>
             </div>
         </div>
     </div>
 
     <!-- Misc Configs -->
-    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-4xl mt-6">
-        <h1 class="text-2xl font-bold mb-4">Misc</h1>
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto mt-6 mb-8">
+        <h1 class="text-xl sm:text-2xl font-bold mb-4">Misc</h1>
         <form id="config-form" class="space-y-4">
             {% for config in configs %}
-            <div class="flex items-center">
-                <label for="config-input-{{ config.name }}" class="w-1/2 text-gray-700">{{ config.name }}</label>
-                <input id="config-input-{{ config.name }}" name="{{ config.name }}" class="border p-2 w-1/2" value="{{ config.value }}">
+            <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                <label for="config-input-{{ config.name }}" class="sm:w-1/2 text-gray-700">{{ config.name }}</label>
+                <input id="config-input-{{ config.name }}" name="{{ config.name }}" class="border p-2 w-full sm:w-1/2" value="{{ config.value }}">
             </div>
             {% endfor %}
             <div class="flex justify-end mt-4">
-                <button type="submit" class="bg-blue-500 text-white p-2 rounded">Submit All</button>
+                <button type="submit" class="bg-blue-500 text-white p-2 rounded w-full sm:w-auto">Submit All</button>
             </div>
         </form>
     </div>
