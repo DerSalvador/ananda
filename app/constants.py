@@ -9,8 +9,8 @@ DEFAULT_CONFIG = {
     "SantimentThresholdLong": 0.25,
     "SantimentThresholdShort": -0.25,
     "ReturnOnInvest": 0.08,
-    "ReverseTrendCheckAllNegative": "true",
+    "ReverseTrendShouldBeNegativePercent": 100,
     "ReverseTrendCheckFirstGreater": "true",
     "ReverseTrendCheckLinearDecreasing": "true",
-    "ReverseTrendLinearDecreasingThresholdPercent": 5,
+    "ReverseTrendLinearDecreasingThresholdPercent": 95,
 }

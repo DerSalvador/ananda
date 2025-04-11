@@ -47,6 +47,10 @@ class TimeBasedDeque:
         while self.queue and (now - self.queue[0][0] > self.max_age):
             self.queue.popleft()
 
+    def get_items(self):
+        """Retrieve all items in the queue."""
+        return [item for _, item in self.queue]
+
     def get_items_last_x_seconds(self, seconds):
         """Retrieve items from the last X seconds."""
         threshold = time() - (seconds)

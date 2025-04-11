@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from db import get_leverage, get_real_sentiment, update_leverage, update_sentiment
+from db import current_position, get_leverage, get_profits, should_reverse, update_leverage, update_profit, update_sentiment
 from bias import get_all_configs, get_biases, getInterfaces, update_bias, update_config
 from pydantic import BaseModel
 from bias.interface import BiasRequest, BiasResponse, BiasType
@@ -54,16 +54,17 @@ def post_sentiment(request: BiasRequest) -> dict[str, BiasResponse]:
         sentiments["final"] = {"bias": BiasType.NEUTRAL, "error": "Sentiments do not agree", "reason": "Sentiments do not agree"}
 
     # Check back on real values from custom_exit and reverse trend if needed
-    real_sentiment = get_real_sentiment(request.symbol)
-    if sentiments["final"]["bias"] != BiasType.NEUTRAL:
-        if real_sentiment == BiasType.LONG and sentiments["final"]["bias"] == BiasType.SHORT:
-            logger.info(f"Real sentiment: LONG, Reversing final sentiment")
-            sentiments["final"]["bias"] = BiasType.LONG
-            sentiments["final"]["reason"] = "Original sentiment was SHORT, but real sentiment is LONG, REVERSING"
-        elif real_sentiment == BiasType.SHORT and sentiments["final"]["bias"] == BiasType.LONG:
-            logger.info(f"Real sentiment: SHORT, Reversing final sentiment")
-            sentiments["final"]["bias"] = BiasType.SHORT
-            sentiments["final"]["reason"] = "Original sentiment was LONG, but real sentiment is SHORT, REVERSING"
+    should_reverse_bool = should_reverse(request.symbol)
+    logger.info(f"Should reverse: {should_reverse_bool}")
+    if should_reverse_bool:
+        cur_position = current_position(request.symbol)
+        if cur_position == sentiments["final"]["bias"]:
+            logger.info(f"Reversing position for {request.symbol} to LONG")
+            if cur_position == BiasType.SHORT:
+                sentiments["final"] = {"bias": BiasType.LONG, "reason": "Sentiments agreed on SHORT, reversing position"}
+            elif cur_position == BiasType.LONG:
+                sentiments["final"] = {"bias": BiasType.SHORT, "reason": "Sentiments agreed on LONG, reversing position"}
+
     return sentiments
 
 class UpdateBiasRequest(BaseModel):
@@ -103,6 +104,24 @@ class UpdateConfigRequest(BaseModel):
 def _update_config(data: UpdateConfigRequest):
     update_config(data.name, data.value)
     return {"status": "success", "message": "Config updated"}
+
+class AddProfitRequest(BaseModel):
+    symbol: str
+    profit: float
+    is_short: bool = False
+@app.post("/profit")
+def _update_profit(addProfitRequest: AddProfitRequest):
+    update_profit(addProfitRequest.symbol, addProfitRequest.profit, addProfitRequest.is_short)
+
+@app.get("/profit/{symbol}")
+def _get_profit(symbol: str):
+    profits = get_profits(symbol)
+    return profits
+
+@app.get("/customexit/{symbol}")
+def custom_exit(symbol: str):
+    should_reverse_bool = should_reverse(symbol)
+    return { "exit": should_reverse_bool, "position": current_position(symbol) }
 
 @app.post("/sentiment/{symbol}")
 def _update_sentiment(symbol: str, updateRequest: BiasResponse):
