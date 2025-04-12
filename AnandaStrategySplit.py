@@ -286,7 +286,7 @@ class AnandaStrategySplit(IStrategy):
         finally:
             return True
 
-    def should_exit(self, symbol: str):
+    def custom_exit_check(self, symbol: str):
         """
         Check if the sentiment is reversed
         :param symbol: Symbol to check
@@ -303,12 +303,18 @@ class AnandaStrategySplit(IStrategy):
     def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float, current_profit: float, **kwargs):
         # calculated_winrate = self.calculate_winrate()
         # logging.info(f"Calculated winrate: {calculated_winrate}")
+        logging.info("Running custom exit")
         is_short = trade.is_short
         is_long = not trade.is_short
         symbol = pair.split("/")[0]
 
+        logging.info("updating profit")
         self.update_profit(symbol, current_profit, is_short)
+        logging.info("updated profit")
 
+
+        logging.info(f"Current profit: {current_profit}")
+        logging.info("Checking return on invest")
         config = self.get_config()
         self.return_on_invest = float(config.get("ReturnOnInvest", 0.08))
 
@@ -318,12 +324,14 @@ class AnandaStrategySplit(IStrategy):
             self.dp.send_msg(message)
             return message
 
-        if self.should_exit(symbol):
+        logging.info("Checking if sentiment is reversed")
+        if self.custom_exit_check(symbol):
             message = f"Sentiment reversed, exiting trade for {symbol}"
             logging.info(message)
             self.dp.send_msg(message)
             return True
 
+        logging.info("ignoring exit")
         return False
 
     def bot_start(self, **kwargs) -> None:
