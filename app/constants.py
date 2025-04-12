@@ -13,4 +13,9 @@ DEFAULT_CONFIG = {
     "ReverseTrendCheckFirstGreater": "true",
     "ReverseTrendCheckLinearDecreasing": "true",
     "ReverseTrendLinearDecreasingThresholdPercent": 95,
+    "WinrateHigh": 0.7,
+    "WinrateLow": 0.3,
+    "StoplossWinrateHigh": -0.12,
+    "StoplossWinrateLow": -0.18,
+    "StoplossWinrateNeutral": -0.18,
 }

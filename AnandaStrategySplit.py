@@ -300,23 +300,46 @@ class AnandaStrategySplit(IStrategy):
             logging.error(f"Error getting reverse logic: {e}")
         return False
 
+    def adjust_stoploss(self, config):
+        """
+        Adjust the stoploss based on the current profit
+        :return: None
+        """
+        calculated_winrate = self.calculate_winrate()
+        logging.info(f"Calculated winrate: {calculated_winrate}")
+
+        winrate_high = float(config.get("WinrateHigh", 0.7))
+        winrate_low = float(config.get("WinrateLow", 0.3))
+        if calculated_winrate >= winrate_high:
+            logging.info(f"Winrate is high, adjusting stoploss")
+            self.stoploss = float(config.get("StoplossWinrateHigh", -0.12))
+
+        elif calculated_winrate <= winrate_low:
+            logging.info(f"Winrate is low, adjusting stoploss")
+            self.stoploss = float(config.get("StoplossWinrateLow", -0.18))
+
+        else:
+            logging.info(f"Winrate is neutral, adjusting stoploss to default")
+            self.stoploss = float(config.get("StoplossWinrateNeutral", -0.18))
+
+        return False
+
     def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float, current_profit: float, **kwargs):
-        # calculated_winrate = self.calculate_winrate()
-        # logging.info(f"Calculated winrate: {calculated_winrate}")
         logging.info("Running custom exit")
         is_short = trade.is_short
         is_long = not trade.is_short
         symbol = pair.split("/")[0]
 
+        logging.info(f"Current profit: {current_profit}")
         logging.info("updating profit")
         self.update_profit(symbol, current_profit, is_short)
         logging.info("updated profit")
 
 
-        logging.info(f"Current profit: {current_profit}")
         logging.info("Checking return on invest")
         config = self.get_config()
         self.return_on_invest = float(config.get("ReturnOnInvest", 0.08))
+        self.adjust_stoploss(config)
 
         if current_profit >= self.return_on_invest:
             message = f"current_profit={current_profit} is greater or equal {self.return_on_invest}, realizing profit "
@@ -327,6 +350,13 @@ class AnandaStrategySplit(IStrategy):
         logging.info("Checking if sentiment is reversed")
         if self.custom_exit_check(symbol):
             message = f"Sentiment reversed, exiting trade for {symbol}"
+            logging.info(message)
+            self.dp.send_msg(message)
+            return True
+
+        logging.info(f"current_profit={current_profit}, self.stoploss={self.stoploss} symbol={symbol}")
+        if current_profit <= self.stoploss:
+            message = f"current_profit={current_profit} is less than stoploss {self.stoploss}, exiting trade"
             logging.info(message)
             self.dp.send_msg(message)
             return True
