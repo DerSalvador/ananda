@@ -42,6 +42,17 @@ import requests
 from technical import qtpylib
 from collections import deque
 
+
+def measure_time(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        logging.debug(f"{func.__name__} took {execution_time:.4f} seconds to execute")
+        return result
+    return wrapper
+
 class TimeBasedDeque:
     def __init__(self, max_age=3600):
         self.max_age = max_age
@@ -134,6 +145,7 @@ class AnandaStrategySplit(IStrategy):
 
     return_on_invest = 0.08
 
+    @measure_time
     def get_config(self):
         response = requests.get(f"{bias_endpoint}/configs")
         response.raise_for_status()
@@ -141,6 +153,7 @@ class AnandaStrategySplit(IStrategy):
         config_dict = {item['name']: item['value'] for item in config_json}
         return config_dict
 
+    @measure_time
     def get_bias(self, pair):
         market_bias = {}
         reason = ""
@@ -212,8 +225,8 @@ class AnandaStrategySplit(IStrategy):
         :return: DataFrame with entry columns populated
         """
         # dataframe.drop(dataframe.index, inplace=True)
-        logging.warn("Populate entry with new api")
         symbol = metadata['pair'].split("/")[0]
+        logging.warn(f"Populate entry with new api for {symbol}")
         market_bias, reason = self.get_bias(symbol)
 
         logging.info(f"Market bias is {market_bias} for {symbol}, reason: {reason}")
@@ -325,7 +338,7 @@ class AnandaStrategySplit(IStrategy):
         return False
 
     def custom_exit(self, pair: str, trade: Trade, current_time: datetime, current_rate: float, current_profit: float, **kwargs):
-        logging.info("Running custom exit")
+        logging.info(f"Running custom exit for {pair}")
         is_short = trade.is_short
         is_long = not trade.is_short
         symbol = pair.split("/")[0]
@@ -375,3 +388,30 @@ class AnandaStrategySplit(IStrategy):
     def bot_loop_start(self, **kwargs) -> None:
         self.bot_start()
 
+    def custom_stake_amount(self, pair: str, current_time: datetime, current_rate: float,
+                                proposed_stake: float, min_stake: float | None, max_stake: float,
+                                leverage: float, entry_tag: str | None, side: str,
+                                **kwargs) -> float:
+        win_rate = self.calculate_winrate()
+        config = self.get_config()
+        win_rate_high = float(config.get("WinrateHigh", 0.7))
+        win_rate_low = float(config.get("WinrateLow", 0.3))
+        max_stake = float(config.get("MaxStake", 1000))
+        min_stake = float(config.get("MinStake", 10))
+        default_stake = float(config.get("DefaultStake", 100))
+        stake_increment_step = float(config.get("StakeIncrementStep", 100))
+        if win_rate >= win_rate_high and self.custom_stake < max_stake:
+            self.custom_stake += stake_increment_step
+            logging.info(f"Winrate is high, increasing stake to {self.custom_stake}")
+            self.dp.send_msg(f"Winrate is high, increasing stake to {self.custom_stake}")
+        elif win_rate <= win_rate_low and self.custom_stake > min_stake:
+            self.custom_stake -= stake_increment_step
+            logging.info(f"Winrate is low, decreasing stake to {self.custom_stake}")
+            self.dp.send_msg(f"Winrate is low, decreasing stake to {self.custom_stake}")
+        elif win_rate > win_rate_low and win_rate < win_rate_high and self.custom_stake != default_stake:
+            self.custom_stake = default_stake
+            logging.info(f"Winrate is neutral, using default stake {self.custom_stake}")
+            self.dp.send_msg(f"Winrate is neutral, using default stake {self.custom_stake}")
+        self.custom_stake = min(self.custom_stake, max_stake)
+        self.custom_stake = max(self.custom_stake, min_stake)
+        return self.custom_stake

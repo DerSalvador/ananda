@@ -18,4 +18,8 @@ DEFAULT_CONFIG = {
     "StoplossWinrateHigh": -0.12,
     "StoplossWinrateLow": -0.18,
     "StoplossWinrateNeutral": -0.18,
+    "MaxStake": 1000,
+    "MinStake": 10,
+    "DefaultStake": 100,
+    "StakeIncrementStep": 100
 }
