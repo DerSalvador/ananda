@@ -68,10 +68,14 @@
 
                         const row1 = document.createElement('div');
                         row1.className = 'flex justify-between text-sm font-medium';
+                        const usedSymbolIcon = details.usedSymbol
+                            ? '<span title="Used symbol" class="ml-1 text-green-500">✅</span>'
+                            : '<span title="Did not use symbol" class="ml-1 text-gray-400"></span>';
+
                         row1.innerHTML = `
-                            <span class="text-gray-700">${method}</span>
+                            <span class="flex items-center text-gray-700">${method}${usedSymbolIcon}</span>
                             <span class="capitalize text-${details.bias === 'long' ? 'green' : details.bias === 'short' ? 'red' : 'gray'}-600">${details.bias}</span>
-                        `;
+                        `; 
 
                         const row2 = document.createElement('div');
                         row2.className = 'text-xs text-gray-600 mt-1';
