@@ -19,10 +19,11 @@ class CoinGeckoGlobal(BiasInterface):
         
         market_cap_change_percentage_24h_usd = data["data"]["market_cap_change_percentage_24h_usd"]
         logger.info(f"Market Cap Change Percentage 24h USD: {market_cap_change_percentage_24h_usd}")
+        reason = f"Market Cap Change Percentage 24h USD: {round(market_cap_change_percentage_24h_usd, 2)}"
         
         market_trend_bias = BiasType.NEUTRAL
         if market_cap_change_percentage_24h_usd > 0:
             market_trend_bias = BiasType.LONG 
         elif  market_cap_change_percentage_24h_usd < 0:
             market_trend_bias = BiasType.SHORT 
-        return BiasResponse(bias=market_trend_bias)
+        return BiasResponse(bias=market_trend_bias, usedSymbol=False, reason=reason)

@@ -27,10 +27,13 @@ class GreedAndFear(BiasInterface):
         
         if greed_count / total >= 0.8:
             ret = BiasType.LONG
+            reason = f"Greed count: {greed_count}, Fear count: {fear_count}, Percentage: {greed_count / total:.2%}"
         elif fear_count / total >= 0.8:
             ret = BiasType.SHORT
+            reason = f"Fear count: {fear_count}, Greed count: {greed_count}, Percentage: {fear_count / total:.2%}"
         else:
             ret = BiasType.NEUTRAL
+            reason = f"Greed count: {greed_count}, Fear count: {fear_count}, Percentage: {greed_count / total:.2%}"
 
-        return BiasResponse(bias=ret)
+        return BiasResponse(bias=ret, usedSymbol=False, reason=reason)
 

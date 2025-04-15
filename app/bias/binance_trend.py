@@ -41,12 +41,13 @@ class BinanceTrend(BiasInterface):
 
         # Determine trend
         def trend_logic(row):
+            reason = f"20-day SMA: {row['SMA_20']}, 50-day SMA: {row['SMA_50']}"
             if row['SMA_20'] > row['SMA_50']:
-                return BiasType.LONG
+                return BiasType.LONG, reason
             elif row['SMA_20'] < row['SMA_50']:
-                return BiasType.SHORT
+                return BiasType.SHORT, reason
             else:
-                return BiasType.NEUTRAL
+                return BiasType.NEUTRAL, reason
 
         df['trend'] = df.apply(trend_logic, axis=1)
         return df
@@ -67,5 +68,5 @@ class BinanceTrend(BiasInterface):
 
         # Calculate SMA and detect trends
         df = self.detect_trend(df)
-        latest_trend = df.iloc[-1]['trend']
-        return BiasResponse(bias=latest_trend, usedSymbol=True)
+        latest_trend, reason = df.iloc[-1]['trend']
+        return BiasResponse(bias=latest_trend, usedSymbol=True, reason=reason)
