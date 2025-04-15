@@ -87,12 +87,13 @@ def _get_leverage(pair: str = "default"):
 @app.get("/currentsentiment")
 def _get_current_sentiment():
     symbols = get_config("BiasSymbols")
+    show_all = get_config("BiasShowAll") == "true"
     if not symbols:
         raise ValueError("No symbols found in config")
     sentiments = {}
     for symbol in symbols.split(","):
         symbol = symbol.strip()
-        sentiment = get_sentiment(symbol, True)
+        sentiment = get_sentiment(symbol, show_all)
         logger.info(sentiment)
         sentiments[symbol] = sentiment
     return sentiments

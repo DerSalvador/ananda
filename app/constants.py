@@ -23,5 +23,6 @@ DEFAULT_CONFIG = {
     "DefaultStake": 100,
     "StakeIncrementStep": 100,
     "Leverage": 5.0,
-    "BiasSymbols": "BTC, ETH, SOL, DOGE, TRUMP"
+    "BiasSymbols": "BTC, ETH, SOL, DOGE, TRUMP",
+    "BiasShowAll": "true"
 }
