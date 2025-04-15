@@ -17,11 +17,38 @@
             }
         }
 
+        async function loadSentimentData() {
+            try {
+                const response = await fetch('/currentsentiment');
+                const data = await response.json();
+
+                const tableBody = document.getElementById('sentiment-table-body');
+                tableBody.innerHTML = '';
+
+                for (const [symbol, methods] of Object.entries(data)) {
+                    for (const [method, details] of Object.entries(methods)) {
+                        const row = document.createElement('tr');
+
+                        const symbolCell = `<td class="border px-4 py-2">${symbol}</td>`;
+                        const methodCell = `<td class="border px-4 py-2">${method}</td>`;
+                        const biasCell = `<td class="border px-4 py-2">${details.bias}</td>`;
+                        const message = details.error || details.reason || '';
+                        const errorCell = `<td class="border px-4 py-2 text-sm text-gray-700">${message}</td>`;
+
+                        row.innerHTML = symbolCell + methodCell + biasCell + errorCell;
+                        tableBody.appendChild(row);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load sentiment data:', err);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            // Form submission
             const form = document.getElementById('config-form');
             form.addEventListener('submit', async function (e) {
                 e.preventDefault();
-
                 const formData = new FormData(form);
                 const entries = Array.from(formData.entries());
 
@@ -41,10 +68,14 @@
 
                 alert('All configs updated successfully!');
             });
+
+            // Load sentiment data
+            loadSentimentData();
         });
     </script>
 </head>
 <body class="bg-gray-100 min-h-screen p-4">
+
     <!-- Biases -->
     <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto mt-6">
         <h1 class="text-xl sm:text-2xl font-bold mb-4">Bias Configuration</h1>
@@ -72,6 +103,26 @@
                 <button type="submit" class="bg-blue-500 text-white p-2 rounded w-full sm:w-auto">Submit All</button>
             </div>
         </form>
+    </div>
+
+    <!-- Sentiment Table -->
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-6xl mx-auto mt-6 mb-8">
+        <h1 class="text-xl sm:text-2xl font-bold mb-4">Current Sentiment</h1>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-200">
+                <thead>
+                    <tr class="bg-gray-100 text-left">
+                        <th class="border px-4 py-2">Symbol</th>
+                        <th class="border px-4 py-2">Method</th>
+                        <th class="border px-4 py-2">Sentiment</th>
+                        <th class="border px-4 py-2">Error / Reason</th>
+                    </tr>
+                </thead>
+                <tbody id="sentiment-table-body">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
     </div>
 </body>
 </html>
