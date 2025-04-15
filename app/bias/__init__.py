@@ -2,6 +2,7 @@ from functools import cache
 import os
 import importlib
 import inspect
+import shutil
 from constants import DEFAULT_CONFIG
 from bias.interface import BiasInterface
 from utils import get_logger
@@ -111,6 +112,11 @@ def getInterfaces(all = False):
     return interfaces
 
 def init():
+    try:
+        biasdb.all()
+    except Exception as e:
+        logger.error(f"Error loading biasdb: {e}, DELETING and RECREATING")
+        os.remove(f"{CONFIG_PATH}/biasdb.json")
     interfaces = getInterfaces(all=True)
     for bias in interfaces.keys():
         if not biasdb.search(Query().name == bias):

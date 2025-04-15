@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from db import current_position, get_leverage, get_profits, should_reverse, update_leverage, update_profit, update_sentiment
+from db import current_position, get_profits, should_reverse, update_profit, update_sentiment
 from bias import get_all_configs, get_biases, get_config, getInterfaces, update_bias, update_config
 from pydantic import BaseModel
 from bias.interface import BiasRequest, BiasResponse, BiasType
@@ -73,7 +73,7 @@ class UpdateBiasRequest(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 def get_config_page(request: Request):
-    return templates.TemplateResponse("config.html", {"request": request, "biases": get_biases(), "leverage": get_leverage(), "configs": get_all_configs()})
+    return templates.TemplateResponse("config.html", {"request": request, "biases": get_biases(), "configs": get_all_configs()})
 
 class UpdateLeverageRequest(BaseModel):
     pair: str = "default"
