@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bias Config</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <script>
         async function toggleBias(biasName, checkbox) {
@@ -17,38 +18,11 @@
             }
         }
 
-        async function loadSentimentData() {
-            try {
-                const response = await fetch('/currentsentiment');
-                const data = await response.json();
-
-                const tableBody = document.getElementById('sentiment-table-body');
-                tableBody.innerHTML = '';
-
-                for (const [symbol, methods] of Object.entries(data)) {
-                    for (const [method, details] of Object.entries(methods)) {
-                        const row = document.createElement('tr');
-
-                        const symbolCell = `<td class="border px-4 py-2">${symbol}</td>`;
-                        const methodCell = `<td class="border px-4 py-2">${method}</td>`;
-                        const biasCell = `<td class="border px-4 py-2">${details.bias}</td>`;
-                        const message = details.error || details.reason || '';
-                        const errorCell = `<td class="border px-4 py-2 text-sm text-gray-700">${message}</td>`;
-
-                        row.innerHTML = symbolCell + methodCell + biasCell + errorCell;
-                        tableBody.appendChild(row);
-                    }
-                }
-            } catch (err) {
-                console.error('Failed to load sentiment data:', err);
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
-            // Form submission
             const form = document.getElementById('config-form');
             form.addEventListener('submit', async function (e) {
                 e.preventDefault();
+
                 const formData = new FormData(form);
                 const entries = Array.from(formData.entries());
 
@@ -69,9 +43,51 @@
                 alert('All configs updated successfully!');
             });
 
-            // Load sentiment data
-            loadSentimentData();
+            fetchSentiments();
         });
+
+        async function fetchSentiments() {
+            try {
+                const response = await fetch('/currentsentiment');
+                const data = await response.json();
+                const container = document.getElementById('sentiment-list');
+
+                for (const [symbol, methods] of Object.entries(data)) {
+                    const card = document.createElement('div');
+                    card.className = 'border border-gray-300 rounded-lg p-4 bg-gray-50';
+
+                    const title = document.createElement('h2');
+                    title.className = 'text-lg font-semibold text-blue-600 mb-2';
+                    title.textContent = symbol;
+
+                    card.appendChild(title);
+
+                    Object.entries(methods).forEach(([method, details]) => {
+                        const methodContainer = document.createElement('div');
+                        methodContainer.className = 'mb-2 border-b border-gray-200 pb-2 last:border-none last:pb-0';
+
+                        const row1 = document.createElement('div');
+                        row1.className = 'flex justify-between text-sm font-medium';
+                        row1.innerHTML = `
+                            <span class="text-gray-700">${method}</span>
+                            <span class="capitalize text-${details.bias === 'long' ? 'green' : details.bias === 'short' ? 'red' : 'gray'}-600">${details.bias}</span>
+                        `;
+
+                        const row2 = document.createElement('div');
+                        row2.className = 'text-xs text-gray-600 mt-1';
+                        row2.textContent = details.error || details.reason || '';
+
+                        methodContainer.appendChild(row1);
+                        methodContainer.appendChild(row2);
+                        card.appendChild(methodContainer);
+                    });
+
+                    container.appendChild(card);
+                }
+            } catch (err) {
+                console.error('Failed to fetch sentiment data:', err);
+            }
+        }
     </script>
 </head>
 <body class="bg-gray-100 min-h-screen p-4">
@@ -90,7 +106,7 @@
     </div>
 
     <!-- Misc Configs -->
-    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto mt-6 mb-8">
+    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto mt-6">
         <h1 class="text-xl sm:text-2xl font-bold mb-4">Config</h1>
         <form id="config-form" class="space-y-4">
             {% for config in configs %}
@@ -105,25 +121,14 @@
         </form>
     </div>
 
-    <!-- Sentiment Table -->
-    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-6xl mx-auto mt-6 mb-8">
+    <!-- Sentiment Analysis -->
+    <div id="sentiment-container" class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto mt-6 mb-8">
         <h1 class="text-xl sm:text-2xl font-bold mb-4">Current Sentiment</h1>
-        <div class="overflow-x-auto">
-            <table class="min-w-full bg-white border border-gray-200">
-                <thead>
-                    <tr class="bg-gray-100 text-left">
-                        <th class="border px-4 py-2">Symbol</th>
-                        <th class="border px-4 py-2">Method</th>
-                        <th class="border px-4 py-2">Sentiment</th>
-                        <th class="border px-4 py-2">Error / Reason</th>
-                    </tr>
-                </thead>
-                <tbody id="sentiment-table-body">
-                    <!-- Populated by JS -->
-                </tbody>
-            </table>
+        <div id="sentiment-list" class="space-y-4">
+            <!-- Content populated by JS -->
         </div>
     </div>
+
 </body>
 </html>
 
