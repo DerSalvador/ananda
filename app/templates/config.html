@@ -17,21 +17,6 @@
             }
         }
 
-        async function updateLeverage() {
-            const leverage = document.getElementById('leverage-input').value;
-            const response = await fetch('/update-leverage', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ leverage })
-            });
-            const result = await response.json();
-            if (result.status !== 'success') {
-                alert('Error updating leverage: ' + result.message);
-            } else {
-                alert('Leverage updated successfully!');
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('config-form');
             form.addEventListener('submit', async function (e) {
@@ -73,21 +58,9 @@
         </ul>
     </div>
 
-    <!-- Leverage -->
-    <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto mt-6">
-        <h1 class="text-xl sm:text-2xl font-bold mb-4">Futures</h1>
-        <div class="flex flex-col space-y-2">
-            <label for="leverage-input" class="text-base sm:text-lg">Leverage</label>
-            <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                <input type="number" id="leverage-input" class="border p-2 w-full" placeholder="Enter leverage" value="{{ leverage }}">
-                <button onclick="updateLeverage()" class="bg-blue-500 text-white p-2 rounded w-full sm:w-auto">Submit</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Misc Configs -->
     <div class="bg-white p-4 sm:p-6 rounded-lg shadow-lg w-full max-w-4xl mx-auto mt-6 mb-8">
-        <h1 class="text-xl sm:text-2xl font-bold mb-4">Misc</h1>
+        <h1 class="text-xl sm:text-2xl font-bold mb-4">Config</h1>
         <form id="config-form" class="space-y-4">
             {% for config in configs %}
             <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">

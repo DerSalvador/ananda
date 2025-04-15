@@ -21,5 +21,7 @@ DEFAULT_CONFIG = {
     "MaxStake": 1000,
     "MinStake": 10,
     "DefaultStake": 100,
-    "StakeIncrementStep": 100
+    "StakeIncrementStep": 100,
+    "Leverage": 5.0,
+    "BiasSymbols": "BTC, ETH, SOL, DOGE, TRUMP"
 }

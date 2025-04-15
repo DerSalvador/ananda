@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from db import current_position, get_leverage, get_profits, should_reverse, update_leverage, update_profit, update_sentiment
-from bias import get_all_configs, get_biases, getInterfaces, update_bias, update_config
+from bias import get_all_configs, get_biases, get_config, getInterfaces, update_bias, update_config
 from pydantic import BaseModel
 from bias.interface import BiasRequest, BiasResponse, BiasType
 from fastapi.templating import Jinja2Templates
@@ -24,13 +24,13 @@ async def get_status():
     return {"timestamp": datetime.now().isoformat()}
 
 @app.get("/sentiment/{symbol}")
-async def get_sentiment(symbol: str) -> dict[str, BiasResponse]:
+def get_sentiment(symbol: str, all_sentiments: bool = False) -> dict[str, BiasResponse]:
     request = BiasRequest(symbol=symbol)
-    return post_sentiment(request)
+    return post_sentiment(request, all_sentiments)
 
-def post_sentiment(request: BiasRequest) -> dict[str, BiasResponse]:
+def post_sentiment(request: BiasRequest, all_sentiments: bool = False) -> dict[str, BiasResponse]:
     sentiments = {}
-    interfaces = getInterfaces()
+    interfaces = getInterfaces(all = all_sentiments)
     executor = ThreadPoolExecutor(max_workers=len(interfaces))
     futures = {executor.submit(interface.bias, request): name for name, interface in interfaces.items()}
 
@@ -81,12 +81,21 @@ class UpdateLeverageRequest(BaseModel):
 
 @app.get("/leverage")
 def _get_leverage(pair: str = "default"):
-    return {"leverage": get_leverage(pair)}
+    leverage = get_config("Leverage")
+    return {"leverage": leverage}
 
-@app.post("/update-leverage")
-def _update_leverage(data: UpdateLeverageRequest):
-    update_leverage(data.pair, data.leverage)
-    return {"status": "success", "message": "Leverage updated"}
+@app.get("/currentsentiment")
+def _get_current_sentiment():
+    symbols = get_config("BiasSymbols")
+    if not symbols:
+        raise ValueError("No symbols found in config")
+    sentiments = {}
+    for symbol in symbols.split(","):
+        symbol = symbol.strip()
+        sentiment = get_sentiment(symbol, True)
+        logger.info(sentiment)
+        sentiments[symbol] = sentiment
+    return sentiments
 
 @app.post("/update-bias")
 def _update_bias(data: UpdateBiasRequest):
