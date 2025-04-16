@@ -2,6 +2,7 @@
 # flake8: noqa: F401
 # isort: skip_file
 # --- Do not remove these imports ---
+import json
 import numpy as np
 import time, traceback, threading
 import pandas as pd
@@ -900,6 +901,7 @@ class AnandaStrategySplit(IStrategy):
         response.raise_for_status()
         config_json = response.json()
         config_dict = {item['name']: item['value'] for item in config_json}
+        logging.info(f"Current config: {json.dumps(config_dict, indent=2)}")
         return config_dict
 
     def get_config(self):
