@@ -244,7 +244,7 @@ class AnandaStrategySplit(IStrategy):
 
     def get_leverage(self, pair, proposed_leverage):
         config = self.get_config()
-        leverage = config.get("Leverage", proposed_leverage)
+        leverage = float(config.get("Leverage", proposed_leverage))
         return leverage
 
     def get_stake_amount(self):

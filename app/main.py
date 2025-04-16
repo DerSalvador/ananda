@@ -82,6 +82,10 @@ class UpdateLeverageRequest(BaseModel):
 @app.get("/leverage")
 def _get_leverage(pair: str = "default"):
     leverage = get_config("Leverage")
+    if not leverage:
+        leverage = 5.0
+    else:
+        leverage = float(leverage)
     return {"leverage": leverage}
 
 @app.get("/currentsentiment")
