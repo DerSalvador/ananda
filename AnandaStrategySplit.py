@@ -171,6 +171,7 @@ class AnandaStrategySplit(IStrategy):
     # Number of candles the strategy requires before producing valid signals
     startup_candle_count: int = 30
     banned_minutes: int = 60
+    biasConfig = None
     # Strategy parameters
     buy_rsi = IntParameter(10, 40, default=30, space="buy")
     sell_rsi = IntParameter(60, 90, default=70, space="sell")
@@ -242,16 +243,9 @@ class AnandaStrategySplit(IStrategy):
             logging.error(f"Error setting sentiment: {e}")
 
     def get_leverage(self, pair, proposed_leverage):
-        leverage = 5 # proposed_leverage
-        try:
-            response = requests.get(f"{bias_endpoint}/leverage?pair={pair}")
-            response.raise_for_status()
-            leverage = response.json().get("leverage", proposed_leverage)
-        except Exception as e:
-            logging.error(f"Error getting leverage: {e}")
-            raise e
-        finally:
-            return leverage
+        config = self.get_config()
+        leverage = config.get("Leverage", proposed_leverage)
+        return leverage
 
     def get_stake_amount(self):
         return self.default_stake
@@ -902,6 +896,7 @@ class AnandaStrategySplit(IStrategy):
         config_json = response.json()
         config_dict = {item['name']: item['value'] for item in config_json}
         logging.info(f"Current config: {json.dumps(config_dict, indent=2)}")
+        self.biasConfig = config_dict
         return config_dict
 
     def get_config(self):
