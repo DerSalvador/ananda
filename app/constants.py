@@ -23,7 +23,7 @@ DEFAULT_CONFIG = {
     "MinStake": 100,
     "DefaultStake": 200,
     "StakeIncrementStep": 100,
-    "Leverage": 3.0,
+    "Leverage": 2.0,
     "BiasSymbols": "BTC",
     "BiasShowAll": "true",
     "CheckProfitSeconds": 5,
